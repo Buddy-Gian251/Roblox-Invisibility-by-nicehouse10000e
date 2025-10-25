@@ -1,0 +1,212 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local InputService = game:GetService("UserInputService")
+local StarterGui = game:GetService("StarterGui")
+
+local player = Players.LocalPlayer
+
+-- Global variables
+local offset = 500
+local CFSpeed = 50
+local offset_bool = false
+local speed_enabled = false
+local speed_connection
+local died = false -- ✅ death flag
+
+local univ_character
+local univ_humanoid
+local univ_hrp
+local univ_cam
+
+-- Y freeze variables
+local y_freeze_connection
+local spoofc_connection
+local frozen_y
+
+-- Notification helper
+local function message(title, text, time)
+	pcall(function()
+		StarterGui:SetCore("SendNotification", {
+			Title = title,
+			Text = text,
+			Duration = time or 3
+		})
+	end)
+end
+
+-- 🛠 Refresh universal variables
+local function stop_all_loops()
+	-- Disconnect everything
+	if speed_connection then
+		speed_connection:Disconnect()
+		speed_connection = nil
+	end
+	if y_freeze_connection then
+		y_freeze_connection:Disconnect()
+		y_freeze_connection = nil
+	end
+	if spoofc_connection then
+		spoofc_connection:Disconnect()
+		spoofc_connection = nil
+	end
+end
+
+local function setup_death_connection()
+	if not univ_humanoid then return end
+	univ_humanoid.Died:Connect(function()
+		died = true
+		stop_all_loops()
+		message("Notice", "You died. Offset/Speed disabled.", 3)
+	end)
+end
+
+local function refresh_universal_variables()
+	univ_character = player.Character or player.CharacterAdded:Wait()
+	univ_humanoid = univ_character:FindFirstChildOfClass("Humanoid")
+	univ_hrp = univ_character:FindFirstChild("HumanoidRootPart")
+	univ_cam = workspace.CurrentCamera
+
+	died = false -- reset death flag on respawn
+
+	if univ_character and univ_humanoid and univ_hrp and univ_cam then
+		message("Variables Refreshed", "All universal references updated.", 2)
+		setup_death_connection()
+	else
+		warn("[Refresh] Some universal variables could not be found.")
+	end
+end
+
+refresh_universal_variables()
+
+player.CharacterAdded:Connect(function()
+	task.wait(1)
+	refresh_universal_variables()
+	-- Resume speed if it was enabled
+	if speed_enabled and not died then
+		start_cframe_speed()
+	end
+end)
+
+-- 🌀 Camera spoof
+local function spoof_cam()
+	if spoofc_connection then return end
+	spoofc_connection = RunService.Heartbeat:Connect(function()
+		if univ_humanoid then
+			univ_humanoid.CameraOffset = Vector3.new(0, -offset, 0)
+		end
+	end)
+end
+
+local function stop_spoof_cam()
+	if spoofc_connection then
+		spoofc_connection:Disconnect()
+		spoofc_connection = nil
+	end
+	if univ_humanoid then
+		univ_humanoid.CameraOffset = Vector3.new(0, 0, 0)
+	end
+end
+
+-- ❄️ Freeze Y
+local function freeze_y_axis(hrp)
+	if y_freeze_connection then return end
+	frozen_y = hrp.Position.Y
+
+	y_freeze_connection = RunService.Heartbeat:Connect(function()
+		local current_pos = hrp.Position
+		hrp.Velocity = Vector3.new(hrp.Velocity.X, 0, hrp.Velocity.Z)
+		hrp.CFrame = CFrame.new(current_pos.X, frozen_y, current_pos.Z) * hrp.CFrame.Rotation
+	end)
+end
+
+local function unfreeze_y_axis()
+	if y_freeze_connection then
+		y_freeze_connection:Disconnect()
+		y_freeze_connection = nil
+		frozen_y = nil
+	end
+end
+
+-- ⚡ CFrame speed
+local function start_cframe_speed()
+	if speed_connection then return end
+	speed_connection = RunService.RenderStepped:Connect(function(dt)
+		if died then stop_cframe_speed() return end
+		if not (univ_humanoid and univ_hrp) then return end
+		local moveDir = univ_humanoid.MoveDirection
+		if moveDir.Magnitude > 0 then
+			univ_hrp.CFrame += moveDir * (CFSpeed * dt)
+		end
+	end)
+end
+
+local function stop_cframe_speed()
+	if speed_connection then
+		speed_connection:Disconnect()
+		speed_connection = nil
+	end
+end
+
+-- 🔁 Offset toggle
+local function set_offset()
+	if died then
+		message("Error", "Cannot toggle offset while dead!", 3)
+		stop_all_loops()
+		return
+	end
+
+	if not (univ_character and univ_humanoid and univ_hrp and univ_cam) then
+		refresh_universal_variables()
+		return
+	end
+
+	local hrp = univ_hrp
+	local character = univ_character
+	local rootJoint
+
+	for _, m6d in ipairs(character:GetDescendants()) do
+		if m6d:IsA("Motor6D") and m6d.Part0 == hrp then
+			rootJoint = m6d
+			break
+		end
+	end
+
+	if not rootJoint then
+		warn("RootJoint not found in HumanoidRootPart")
+		return
+	end
+
+	if offset_bool then
+		hrp.CFrame = hrp.CFrame * CFrame.new(0, offset, 0)
+		rootJoint.C0 = rootJoint.C0 * CFrame.new(0, offset, 0)
+		spoof_cam()
+		freeze_y_axis(hrp)
+		message("Offset Enabled", "Y position frozen", 3)
+	else
+		unfreeze_y_axis()
+		hrp.CFrame = hrp.CFrame * CFrame.new(0, -offset, 0)
+		rootJoint.C0 = rootJoint.C0 * CFrame.new(0, -offset, 0)
+		stop_spoof_cam()
+		message("Offset Disabled", "Y position restored", 3)
+	end
+end
+
+-- 🕹️ Input handling
+InputService.InputBegan:Connect(function(input, processed)
+	if processed then return end
+	if input.KeyCode == Enum.KeyCode.F2 then
+		offset_bool = not offset_bool
+		set_offset()
+	elseif input.KeyCode == Enum.KeyCode.F3 then
+		refresh_universal_variables()
+	elseif input.KeyCode == Enum.KeyCode.F4 then
+		speed_enabled = not speed_enabled
+		if speed_enabled and not died then
+			start_cframe_speed()
+			message("Speed", "CFrame speed enabled.", 2)
+		else
+			stop_cframe_speed()
+			message("Speed", "CFrame speed disabled.", 2)
+		end
+	end
+end)
