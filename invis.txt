@@ -421,30 +421,15 @@ local function set_offset()
 	local offset_local = offset
 	local hrp = univ_hrp
 	local character = univ_character
-	local rootJoint
-
-	for _, m6d in ipairs(character:GetDescendants()) do
-		if m6d:IsA("Motor6D") and m6d.Part0 == hrp then
-			rootJoint = m6d
-			break
-		end
-	end
-
-	if not rootJoint then
-		warn("RootJoint not found in HumanoidRootPart")
-		return
-	end
 
 	if offset_bool then
 		hrp.CFrame = hrp.CFrame * CFrame.new(0, offset_local, 0)
-		rootJoint.C0 = rootJoint.C0 * CFrame.new(0, offset_local, 0)
 		spoof_cam()
 		freeze_y_axis(hrp)
 		message("Offset Enabled", "Y movement locked", 3)
 	else
 		unfreeze_y_axis()
 		hrp.CFrame = hrp.CFrame * CFrame.new(0, -offset_local, 0)
-		rootJoint.C0 = rootJoint.C0 * CFrame.new(0, -offset_local, 0)
 		stop_spoof_cam()
 		message("Offset Disabled", "Y movement restored", 3)
 	end
@@ -511,3 +496,4 @@ createVariableEditor("CFSpeed", CFSpeed, 70, function(num)
 	CFSpeed = num
 	message("Variable Updated", "CFSpeed set to " .. num, 2)
 end)
+
