@@ -12,7 +12,7 @@ end)
 
 local PARENT
 
-local ScriptVersion = "0.0.0.0.1"
+local ScriptVersion = "0.0.0.0.2"
 local ScriptName = "nicevisibility10000e"
 
 --[[nvm i suck at this]]
@@ -151,7 +151,7 @@ end
 GuiMain.Name = randomString()
 
 local main_frame = Instance.new("Frame")
-main_frame.Size = UDim2.new(0, 250, 0, 260)
+main_frame.Size = UDim2.new(0, 250, 0, 300)
 main_frame.Position = UDim2.new(0.5, -125, 0.5, -130)
 main_frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 main_frame.BorderSizePixel = 0
@@ -169,7 +169,7 @@ controls_frame.Parent = GuiMain
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 30)
 title.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-title.Text = "nicevisibility10000e"
+title.Text = ScriptName.." v"..ScriptVersion
 title.Font = Enum.Font.SourceSansBold
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 18
@@ -275,18 +275,20 @@ local function createButton(text, yPos, color, callback)
 end
 
 -- Function to move the character in full 3D relative to the camera
-local function moveCharacter(directionVector)
+local function moveCharacter(directionVector, dt)
 	if not (univ_hrp and univ_cam) then return end
 
 	local camCFrame = univ_cam.CFrame
 	local right = camCFrame.RightVector
-	local forward = Vector3.new(camCFrame.LookVector.X, 0, camCFrame.LookVector.Z).Unit -- horizontal forward
-	local up = Vector3.new(0, 1, 0) -- world up, or use camCFrame.UpVector for camera-relative vertical
+	local forward = Vector3.new(camCFrame.LookVector.X, 0, camCFrame.LookVector.Z).Unit
+	local up = Vector3.new(0, 1, 0)
 
-	-- Combine camera-relative movement
 	local moveVector = right * directionVector.X + forward * directionVector.Z + up * directionVector.Y
+	univ_hrp.CFrame += moveVector * (CFSpeed * dt)
 
-	univ_hrp.CFrame += moveVector * CFSpeed * RunService.RenderStepped:Wait()
+	if directionVector.Y ~= 0 then
+		frozen_y += directionVector.Y * (CFSpeed / 2) * dt
+	end
 end
 
 -- Create interactive control button
@@ -306,8 +308,8 @@ local function createControlButton(text, x, y, dirVector)
 	button.MouseButton1Down:Connect(function()
 		holding = true
 		while holding do
-			moveCharacter(dirVector)
-			task.wait() -- adjust speed of movement
+			local dt = RunService.RenderStepped:Wait()
+			moveCharacter(dirVector, dt)
 		end
 	end)
 	button.MouseButton1Up:Connect(function()
@@ -441,7 +443,7 @@ local function handle_y_freeze_modification(direction)
 			return
 		end
 		-- Adjust frozen_y smoothly
-		frozen_y += direction * (CFSpeed * dt * 2) -- speed factor adjustable
+		frozen_y += direction * (CFSpeed * dt / 2) -- speed factor adjustable
 	end)
 end
 
@@ -563,3 +565,4 @@ createControlButton("D", 140, 70, Vector3.new(1, 0, 0)) -- right
 createButton("🎮 Show Controls", 230, Color3.fromRGB(255, 165, 0), function()
 	controls_frame.Visible = not controls_frame.Visible
 end)
+
