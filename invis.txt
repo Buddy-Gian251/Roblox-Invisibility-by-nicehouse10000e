@@ -12,7 +12,7 @@ end)
 
 local PARENT
 
-local ScriptVersion = "0.0.0.0.2"
+local ScriptVersion = "0.0.0.0.3"
 local ScriptName = "nicevisibility10000e"
 
 --[[nvm i suck at this]]
@@ -57,14 +57,6 @@ local _global_success, _global_result = pcall(function()
 	else
 		print("Updating PLRViewer globally")
 		_G.nicevis_version = ScriptVersion
-	end
-
-	if _G.nicevis_interface and _G.nicevis_interface.Parent then
-		for _, child in ipairs(_G.nicevis_interface:GetChildren()) do
-			if child:GetAttribute("canBeUsed") == true then
-				child:Destroy()
-			end
-		end
 	end
 end)
 
@@ -139,8 +131,13 @@ task.delay(5, function()
 	message("Creator Following", "Do you want to follow me?", 5, nil, "Yes", "No")
 end)
 
-local GuiMain = _G.nicevis_interface :: ScreenGui
-if not GuiMain then
+local GuiMain = _G.nicevis_interface
+	if not GuiMain then
+	-- 🧹 Cleanup old interface before creating a new one
+	if _G.nicevis_interface and _G.nicevis_interface.Parent then
+	    _G.nicevis_interface:Destroy()
+	    _G.nicevis_interface = nil
+	end
 	GuiMain = Instance.new("ScreenGui")
 	GuiMain.Enabled = true
 	GuiMain.IgnoreGuiInset = true
@@ -565,4 +562,5 @@ createControlButton("D", 140, 70, Vector3.new(1, 0, 0)) -- right
 createButton("🎮 Show Controls", 230, Color3.fromRGB(255, 165, 0), function()
 	controls_frame.Visible = not controls_frame.Visible
 end)
+
 
