@@ -157,6 +157,15 @@ main_frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 main_frame.BorderSizePixel = 0
 main_frame.Parent = GuiMain
 
+-- 🕹️ QEWASD Frame
+local controls_frame = Instance.new("Frame")
+controls_frame.Size = UDim2.new(0, 200, 0, 150)
+controls_frame.Position = UDim2.new(0.5, -100, 0.5, -150)
+controls_frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+controls_frame.BorderSizePixel = 0
+controls_frame.Visible = false -- hidden by default
+controls_frame.Parent = GuiMain
+
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 30)
 title.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
@@ -166,6 +175,7 @@ title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 18
 title.Parent = main_frame
 makeDraggable(main_frame)
+makeDraggable(controls_frame)
 
 -- Global variables
 _G.NV_OFFSET = _G.NV_OFFSET or 500
@@ -261,6 +271,50 @@ local function createButton(text, yPos, color, callback)
 			BackgroundColor3 = color
 		}):Play()
 		callback()
+	end)
+end
+
+-- Function to move the character in full 3D relative to the camera
+local function moveCharacter(directionVector)
+	if not (univ_hrp and univ_cam) then return end
+
+	local camCFrame = univ_cam.CFrame
+	local right = camCFrame.RightVector
+	local forward = Vector3.new(camCFrame.LookVector.X, 0, camCFrame.LookVector.Z).Unit -- horizontal forward
+	local up = Vector3.new(0, 1, 0) -- world up, or use camCFrame.UpVector for camera-relative vertical
+
+	-- Combine camera-relative movement
+	local moveVector = right * directionVector.X + forward * directionVector.Z + up * directionVector.Y
+
+	univ_hrp.CFrame += moveVector * CFSpeed * RunService.RenderStepped:Wait()
+end
+
+-- Create interactive control button
+local function createControlButton(text, x, y, dirVector)
+	local button = Instance.new("TextButton")
+	button.Size = UDim2.new(0, 50, 0, 50)
+	button.Position = UDim2.new(0, x, 0, y)
+	button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	button.TextColor3 = Color3.fromRGB(255, 255, 255)
+	button.Font = Enum.Font.SourceSansBold
+	button.TextSize = 20
+	button.Text = text
+	button.Parent = controls_frame
+
+	-- Move while button is held
+	local holding = false
+	button.MouseButton1Down:Connect(function()
+		holding = true
+		while holding do
+			moveCharacter(dirVector)
+			task.wait() -- adjust speed of movement
+		end
+	end)
+	button.MouseButton1Up:Connect(function()
+		holding = false
+	end)
+	button.MouseLeave:Connect(function()
+		holding = false
 	end)
 end
 
@@ -497,3 +551,15 @@ createVariableEditor("CFSpeed", CFSpeed, 70, function(num)
 	message("Variable Updated", "CFSpeed set to " .. num, 2)
 end)
 
+-- Arrange QEWASD with movement vectors
+createControlButton("Q", 10, 10, Vector3.new(0, -1, 0)) -- down
+createControlButton("E", 140, 10, Vector3.new(0, 1, 0)) -- up
+createControlButton("W", 70, 10, Vector3.new(0, 0, 1)) -- forward
+createControlButton("A", 10, 70, Vector3.new(-1, 0, 0)) -- left
+createControlButton("S", 70, 70, Vector3.new(0, 0, -1)) -- back
+createControlButton("D", 140, 70, Vector3.new(1, 0, 0)) -- right
+
+-- Toggle visibility button
+createButton("🎮 Show Controls", 230, Color3.fromRGB(255, 165, 0), function()
+	controls_frame.Visible = not controls_frame.Visible
+end)
