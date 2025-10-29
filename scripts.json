@@ -1,12 +1,12 @@
 [
-	}
- 		"name": "Infinite Yield", 
+	{
+		"name": "Infinite Yield",
 		"color": [0, 200, 255],
-	 	"code": "loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))()"
-	{,
-	}
-	 	"name": "DEX Explorer", 
+		"code": "loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))()"
+	},
+	{
+		"name": "DEX Explorer",
 		"color": [0, 200, 255],
-	 	"code": "loadstring(game:HttpGet('https://raw.githubusercontent.com/peyton2465/Dex/master/out.lua')"
+		"code": "loadstring(game:HttpGet('https://raw.githubusercontent.com/peyton2465/Dex/master/out.lua'))()"
 	}
 ]
