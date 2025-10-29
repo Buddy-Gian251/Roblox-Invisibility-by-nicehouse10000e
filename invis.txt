@@ -425,6 +425,7 @@ toggle_button.Activated:Connect(function()
 		buttons_frame.Visible = false
 	else
 		main_frame.Visible = true
+		buttons_frame.Visible = true
 	end
 end)
 
@@ -960,4 +961,5 @@ task.spawn(function()
 		set_colors()
 	end
 end)
+
 
