@@ -16,6 +16,19 @@
 		"specified_game" : "893973440",
 		"color": [0, 200, 255],
 		"code": "loadstring(game:HttpGet('https://raw.githubusercontent.com/ProBaconHub/ProBaconHubV2/refs/heads/main/LOADER.lua'))()"
+	},
+	{
+		"name": "Fling all",
+		"specified_game" : "",
+		"color": [0, 200, 255],
+		"code": "loadstring(game:HttpGet('https://raw.githubusercontent.com/gigihumana/Fe-fling-all-by-gigi/refs/heads/main/Fe%20fling%20all'))()"
+	},
+	{
+		"name": "TSBG: Trashcan man",
+		"specified_game" : "10449761463",
+		"color": [0, 200, 255],
+		"code": "loadstring(game:HttpGet('https://raw.githubusercontent.com/yes1nt/yes/refs/heads/main/Trashcan%20Man'))()"
 	}
 ]
+
 
