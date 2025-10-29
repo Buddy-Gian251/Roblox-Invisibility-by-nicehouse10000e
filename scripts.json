@@ -28,7 +28,23 @@
 		"specified_game" : "10449761463",
 		"color": [0, 200, 255],
 		"code": "loadstring(game:HttpGet('https://raw.githubusercontent.com/yes1nt/yes/refs/heads/main/Trashcan%20Man'))()"
+	},
+	{
+		"name": "PL: FlameCoder",
+		"specified_game" : "155615604",
+		"color": [0, 200, 255],
+		"code": "loadstring(game:HttpGet('https://pastebin.com/raw/CwncTqSG'))()"
+	},
+	{
+		"name": "SAB: Steal a Brainrot",
+		"specified_game" : "109983668079237",
+		"color": [0, 200, 255],
+		"code": "loadstring(game:HttpGet('https://raw.githubusercontent.com/VectorHubz/VectorHubs/refs/heads/main/Vector'))()"
+	},
+	{
+		"name": "TSBG: Kade Hub",
+		"specified_game" : "10449761463",
+		"color": [0, 200, 255],
+		"code": "loadstring(game:HttpGet('https://raw.githubusercontent.com/skibiditoiletfan2007/KadeHubRepository/main/Latest.lua'))()"
 	}
 ]
-
-
