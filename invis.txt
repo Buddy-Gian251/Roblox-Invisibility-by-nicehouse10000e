@@ -373,6 +373,14 @@ buttons_layout.VerticalAlignment = Enum.VerticalAlignment.Top
 buttons_layout.SortOrder = Enum.SortOrder.LayoutOrder
 buttons_layout.Parent = buttons_frame
 
+local buttons_toggle = Instance.new("TextButton")
+buttons_toggle.Size = UDim2.new(0, 100, 0, 30)
+buttons_toggle.Position = UDim2.new(0.5, -50, 0, 40)
+buttons_toggle.Text = "Toggle buttons"
+buttons_toggle.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+buttons_toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+buttons_toggle.Parent = GuiMain
+
 local scripts_frame = Instance.new("ScrollingFrame")
 scripts_frame.Size = UDim2.new(0, 200, 0, 150)
 scripts_frame.Position = UDim2.new(0.5, -100, 0.5, -150)
@@ -404,12 +412,14 @@ title.Parent = main_frame
 
 local toggle_button = Instance.new("TextButton")
 toggle_button.Size = UDim2.new(0, 30, 0, 30)
-toggle_button.Position = UDim2.new(0, 15, 0, 15)
+toggle_button.Position = UDim2.new(0.5, -15, 0, 10)
 toggle_button.Text = "SVe" -- NVe
 toggle_button.Font = Enum.Font.SourceSansBold
 toggle_button.TextColor3 = Color3.fromRGB(255, 255, 255)
 toggle_button.TextSize = 14
 toggle_button.Parent = GuiMain
+
+local buttons_is_visible = false
 
 toggle_button.Activated:Connect(function()
 	if next(currently_dragged) then return end
@@ -419,14 +429,32 @@ toggle_button.Activated:Connect(function()
 	if not controls_frame or not controls_frame.Parent then return end
 
 	if main_frame.Visible then
+		buttons_is_visible = buttons_frame.Visible
 		main_frame.Visible = false
 		scripts_frame.Visible = false
 		controls_frame.Visible = false
 		controls_frame.Visible = false
 		buttons_frame.Visible = false
+		buttons_toggle.Visible = false
 	else
 		main_frame.Visible = true
-		buttons_frame.Visible = true
+		buttons_frame.Visible = buttons_is_visible
+		buttons_toggle.Visible = true
+	end
+end)
+
+buttons_toggle.Activated:Connect(function()
+	if next(currently_dragged) then return end
+	if not GuiMain or not GuiMain.Parent then return end
+	if not main_frame or not main_frame.Parent then return end
+	if not scripts_frame or not scripts_frame.Parent then return end
+	if not controls_frame or not controls_frame.Parent then return end
+
+	if not main_frame.Visible then return end
+	if buttons_frame.Visible then
+		buttons_frame.Visible = false
+	else
+		buttons_frame.Visible = buttons_is_visible or true
 	end
 end)
 
@@ -440,6 +468,7 @@ makeUIStyles(buttons_frame)
 makeDraggable(buttons_frame)
 makeUIStyles(scripts_frame)
 makeDraggable(scripts_frame)
+makeDraggable(buttons_toggle)
 
 -- Global variables
 _G.NV_OFFSET = _G.NV_OFFSET or 500
@@ -972,7 +1001,3 @@ task.spawn(function()
 		set_colors()
 	end
 end)
-
-
-
-
