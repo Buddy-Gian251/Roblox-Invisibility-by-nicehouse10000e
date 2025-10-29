@@ -196,7 +196,8 @@ local function randomString()
 end
 
 task.wait(5)
-message("nicevisibility10000e", "Loading interface", 3, "rbxassetid://11843683600")
+local formatted_message = 'Loading interface, version "'..ScriptVersion..'"'
+message("nicevisibility10000e", formatted_message, 3)
 task.delay(5, function()
 	message("Creator Following", "Do you want to follow me?", 5, nil, "Yes", "No")
 end)
@@ -961,5 +962,6 @@ task.spawn(function()
 		set_colors()
 	end
 end)
+
 
 
