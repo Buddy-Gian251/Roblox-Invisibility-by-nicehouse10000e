@@ -3,6 +3,8 @@ local RunService = game:GetService("RunService")
 local InputService = game:GetService("UserInputService")
 local StarterGui = game:GetService("StarterGui")
 local TweenService = game:GetService("TweenService")
+local CollectionService = game:GetService("CollectionService")
+local HttpService = game:GetService("HttpService")
 
 local player = Players.LocalPlayer
 
@@ -12,8 +14,8 @@ end)
 
 local PARENT
 
-local ScriptVersion = "0.0.0.0.3"
-local ScriptName = "nicevisibility10000e"
+local ScriptVersion = "0.0.0.0.4"
+local ScriptName = "spookvisibility2025e" --nicevisibility10000e
 
 --[[nvm i suck at this]]
 --local safe_to_use = false -- not yet, we gotta wait for the game to load or a new version
@@ -60,46 +62,7 @@ local _global_success, _global_result = pcall(function()
 	end
 end)
 
-local function makeDraggable(UIItem)
-	local dragging = false
-	local dragStart = nil
-	local startPos = nil
-
-	UIItem.InputBegan:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or 
-			input.UserInputType == Enum.UserInputType.Touch then
-			dragging = true
-			dragStart = input.Position
-			startPos = UIItem.Position
-			input.Changed:Connect(function()
-				if input.UserInputState == Enum.UserInputState.End then
-					dragging = false
-				end
-			end)
-		end
-	end)
-
-	InputService.InputChanged:Connect(function(input)
-		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or 
-			input.UserInputType == Enum.UserInputType.Touch) then
-			local delta = input.Position - dragStart
-			UIItem.Position = UDim2.new(
-				startPos.X.Scale, startPos.X.Offset + delta.X,
-				startPos.Y.Scale, startPos.Y.Offset + delta.Y
-			)
-		end
-	end)
-end
-
 local MessageBindable = Instance.new("BindableEvent")
-
-MessageBindable.Event:Connect(function(buttonPressed)
-	if buttonPressed == "Button1" then
-		print("Player clicked OK/Yes")
-	elseif buttonPressed == "Button2" then
-		print("Player clicked Cancel/No")
-	end
-end)
 
 -- 🧭 Notifications
 local function message(title, text, ptime, icon, button1, button2)
@@ -116,6 +79,113 @@ local function message(title, text, ptime, icon, button1, button2)
 	end)
 end
 
+local function getMonthNumber()
+	return tonumber(os.date("%m"))
+end
+
+local function getWeekNumber()
+	return tonumber(os.date("%W"))
+end
+
+local function getDayNumber()
+	return tonumber(os.date("%d"))
+end
+
+local function makeUIStyles(item)
+	if not (item:IsA("Frame") or item:IsA("TextLabel") or item:IsA("TextButton") or item:IsA("TextBox")) then
+		return
+	end
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = Color3.fromRGB(255, 255, 255)
+	stroke.Thickness = 1
+	stroke.Transparency = 0.5
+	stroke.Parent = item
+
+	local gradient = Instance.new("UIGradient")
+	gradient.Color = ColorSequence.new({
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+		ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(80, 80, 80))
+	})
+	gradient.Rotation = 90
+	gradient.Parent = item
+end
+
+local currently_dragged = {}
+
+local InputService = game:GetService("UserInputService")
+local currently_dragged = {}
+
+local function makeDraggable(UIItem, y_draggable, x_draggable)
+	local dragging = false
+	local dragStart = nil
+	local startPos = nil
+	local holdStartTime = nil
+	local holdConnection = nil
+
+	UIItem.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or 
+			input.UserInputType == Enum.UserInputType.Touch then
+
+			holdStartTime = tick()
+			dragStart = input.Position
+			startPos = UIItem.Position
+
+			-- detect if held for 1 second before starting drag
+			holdConnection = game:GetService("RunService").RenderStepped:Connect(function()
+				if not dragging and (tick() - holdStartTime) >= 1 then
+					message("Drag feature", "you can now drag "..(UIItem.Name or "this UI").." anywhere.", 2)
+					dragging = true
+					currently_dragged[UIItem] = true
+					holdConnection:Disconnect()
+					holdConnection = nil
+				end
+			end)
+
+			-- detect release
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then
+					if holdConnection then
+						holdConnection:Disconnect()
+						holdConnection = nil
+					end
+
+					if dragging then
+						dragging = false
+						task.delay(0.5, function()
+							currently_dragged[UIItem] = nil
+						end)
+					end
+				end
+			end)
+		end
+	end)
+
+	InputService.InputChanged:Connect(function(input)
+		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or 
+			input.UserInputType == Enum.UserInputType.Touch) then
+			local delta = input.Position - dragStart
+
+			local newXOffset = x_draggable ~= false and (startPos.X.Offset + delta.X) or startPos.X.Offset
+			local newYOffset = y_draggable ~= false and (startPos.Y.Offset + delta.Y) or startPos.Y.Offset
+
+			UIItem.Position = UDim2.new(
+				startPos.X.Scale, newXOffset,
+				startPos.Y.Scale, newYOffset
+			)
+		end
+	end)
+end
+
+MessageBindable.Event:Connect(function(buttonPressed)
+	if buttonPressed == "Button1" then
+		print("Player clicked OK/Yes")
+	elseif buttonPressed == "Button2" then
+		print("Player clicked Cancel/No")
+	end
+end)
+
 local function randomString()
 	local length = math.random(32,64)
 	local array = {}
@@ -131,12 +201,138 @@ task.delay(5, function()
 	message("Creator Following", "Do you want to follow me?", 5, nil, "Yes", "No")
 end)
 
+local frame_colors = {
+	tc1 = {}, -- will use targetColor
+	tc2 = {}, -- will use targetColor2
+	tc3 = {}, -- will use targetColor3
+	tc4 = {}, -- will use targetColor4
+}
+
+local function adjust_layout(object, adjust_x, adjust_y)
+	local layout = object:FindFirstChildWhichIsA("UIListLayout") or object:FindFirstChildWhichIsA("UIGridLayout")
+	local padding = object:FindFirstChildWhichIsA("UIPadding")
+
+	if not layout then
+		warn("Layout adjusting error: No UIListLayout or UIGridLayout found inside " .. object.Name)
+		return
+	end
+
+	local function updateCanvasSize()
+		RunService.Heartbeat:Wait() -- ensures layout finished updating
+		--message("DEBUG", "Updating canvas size")
+		local absContentSize = layout.AbsoluteContentSize
+		local newCanvasSize = object.CanvasSize
+
+		local padX, padY = 0, 0
+		if padding then
+			padX = (padding.PaddingLeft.Offset + padding.PaddingRight.Offset)
+			padY = (padding.PaddingTop.Offset + padding.PaddingBottom.Offset)
+		end
+
+		-- Add spacing (layout padding) and UIPadding
+		local totalX = absContentSize.X + padX
+		local totalY = absContentSize.Y + padY
+
+		if adjust_x and adjust_y then
+			newCanvasSize = UDim2.new(0, totalX, 0, totalY)
+		elseif adjust_x then
+			newCanvasSize = UDim2.new(0, totalX, newCanvasSize.Y.Scale, newCanvasSize.Y.Offset)
+		elseif adjust_y then
+			newCanvasSize = UDim2.new(newCanvasSize.X.Scale, newCanvasSize.X.Offset, 0, totalY)
+		end
+
+		object.CanvasSize = newCanvasSize
+	end
+
+	-- Initial update
+	updateCanvasSize()
+end
+
+local function set_colors() 
+	local current_month = getMonthNumber()
+	local current_day = getDayNumber()
+	local current_week = getWeekNumber()
+
+	print(current_month, current_day, current_week)
+
+	local targetColor = Color3.fromRGB(255, 255, 255)
+	local targetColor2 = Color3.fromRGB(255, 255, 255)
+	local targetColor3 = Color3.fromRGB(255, 255, 255)
+	local targetColor4 = Color3.fromRGB(255, 255, 255)
+
+	-- 🎃 October 27 - November 6 → Halloween
+	if (current_month == 10 and current_day >= 27) or (current_month == 11 and current_day <= 6) then
+		targetColor = Color3.fromRGB(217, 72, 0)
+		targetColor2 = Color3.fromRGB(211, 113, 0)
+		targetColor3 = Color3.fromRGB(40, 0, 0)
+		targetColor4 = Color3.fromRGB(80, 40, 0)
+
+		-- 🦃 November 7 - November 26 → Thanksgiving
+	elseif (current_month == 11 and current_day >= 7 and current_day <= 26) then
+		targetColor = Color3.fromRGB(255, 136, 0)
+		targetColor2 = Color3.fromRGB(255, 94, 0)
+		targetColor3 = Color3.fromRGB(80, 0, 0)
+		targetColor4 = Color3.fromRGB(80, 59, 30)
+
+		-- 🎄 November 27 - December 26 → Christmas
+	elseif (current_month == 11 and current_day >= 27) or (current_month == 12 and current_day <= 26) then
+		targetColor = Color3.fromRGB(0, 255, 100)
+		targetColor2 = Color3.fromRGB(255, 0, 0)
+		targetColor3 = Color3.fromRGB(0, 80, 0)
+		targetColor4 = Color3.fromRGB(60, 0, 0)
+
+		-- 🎆 December 27 - January 6 → New Year
+	elseif (current_month == 12 and current_day >= 27) or (current_month == 1 and current_day <= 6) then
+		targetColor = Color3.fromRGB(255, 255, 0)
+		targetColor2 = Color3.fromRGB(0, 255, 255)
+		targetColor3 = Color3.fromRGB(0, 0, 60)
+		targetColor4 = Color3.fromRGB(50, 50, 50)
+	end
+
+	-- 🌈 Apply colors to each frame group
+	local function applyColorToUIElement(ui, color)
+		if not ui:IsA("GuiObject") then return end
+
+		-- Apply color based on element type
+		if ui:IsA("Frame")
+			or ui:IsA("ImageLabel")
+			or ui:IsA("ImageButton")
+			or ui:IsA("ScrollingFrame")
+			or ui:IsA("ViewportFrame") then
+			ui.BackgroundColor3 = color
+		elseif ui:IsA("TextLabel")
+			or ui:IsA("TextButton")
+			or ui:IsA("TextBox") then
+			ui.BackgroundColor3 = color
+			-- Optional: also tint text for contrast
+			-- ui.TextColor3 = Color3.new(1, 1, 1)
+		end
+	end
+
+	local function setframecolors()
+		for _, ui in ipairs(frame_colors.tc1) do
+			applyColorToUIElement(ui, targetColor)
+		end
+		for _, ui in ipairs(frame_colors.tc2) do
+			applyColorToUIElement(ui, targetColor2)
+		end
+		for _, ui in ipairs(frame_colors.tc3) do
+			applyColorToUIElement(ui, targetColor3)
+		end
+		for _, ui in ipairs(frame_colors.tc4) do
+			applyColorToUIElement(ui, targetColor4)
+		end
+	end
+
+	setframecolors()
+end
+
 local GuiMain = _G.nicevis_interface
-	if not GuiMain then
+if not GuiMain then
 	-- 🧹 Cleanup old interface before creating a new one
 	if _G.nicevis_interface and _G.nicevis_interface.Parent then
-	    _G.nicevis_interface:Destroy()
-	    _G.nicevis_interface = nil
+		_G.nicevis_interface:Destroy()
+		_G.nicevis_interface = nil
 	end
 	GuiMain = Instance.new("ScreenGui")
 	GuiMain.Enabled = true
@@ -147,32 +343,100 @@ local GuiMain = _G.nicevis_interface
 end
 GuiMain.Name = randomString()
 
-local main_frame = Instance.new("Frame")
-main_frame.Size = UDim2.new(0, 250, 0, 300)
+local main_frame = Instance.new("ScrollingFrame")
+main_frame.Size = UDim2.new(0, 250, 0, 210)
 main_frame.Position = UDim2.new(0.5, -125, 0.5, -130)
-main_frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-main_frame.BorderSizePixel = 0
 main_frame.Parent = GuiMain
+
+local main_layout = Instance.new("UIListLayout")
+main_layout.Padding = UDim.new(0, 5)
+main_layout.FillDirection = Enum.FillDirection.Vertical
+main_layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+main_layout.VerticalAlignment = Enum.VerticalAlignment.Top
+main_layout.SortOrder = Enum.SortOrder.LayoutOrder
+main_layout.Parent = main_frame
+
+local buttons_frame = Instance.new("ScrollingFrame")
+buttons_frame.Size = UDim2.new(0, 250, 0, 200)
+buttons_frame.Position = UDim2.new(0, 0, 0, 200)
+buttons_frame.Visible = true
+buttons_frame.Parent = GuiMain
+buttons_frame.BackgroundTransparency = 0
+buttons_frame.ClipsDescendants = true
+
+local buttons_layout = Instance.new("UIListLayout")
+buttons_layout.Padding = UDim.new(0, 5)
+buttons_layout.FillDirection = Enum.FillDirection.Vertical
+buttons_layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+buttons_layout.VerticalAlignment = Enum.VerticalAlignment.Top
+buttons_layout.SortOrder = Enum.SortOrder.LayoutOrder
+buttons_layout.Parent = buttons_frame
+
+local scripts_frame = Instance.new("ScrollingFrame")
+scripts_frame.Size = UDim2.new(0, 200, 0, 150)
+scripts_frame.Position = UDim2.new(0.5, -100, 0.5, -150)
+scripts_frame.Visible = false -- hidden by default
+scripts_frame.Parent = GuiMain
+
+local scripts_layout = Instance.new("UIListLayout")
+scripts_layout.Padding = UDim.new(0, 5)
+scripts_layout.FillDirection = Enum.FillDirection.Vertical
+scripts_layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+scripts_layout.VerticalAlignment = Enum.VerticalAlignment.Top
+scripts_layout.SortOrder = Enum.SortOrder.LayoutOrder
+scripts_layout.Parent = scripts_frame
 
 -- 🕹️ QEWASD Frame
 local controls_frame = Instance.new("Frame")
 controls_frame.Size = UDim2.new(0, 200, 0, 150)
 controls_frame.Position = UDim2.new(0.5, -100, 0.5, -150)
-controls_frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-controls_frame.BorderSizePixel = 0
 controls_frame.Visible = false -- hidden by default
 controls_frame.Parent = GuiMain
 
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 30)
-title.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 title.Text = ScriptName.." v"..ScriptVersion
 title.Font = Enum.Font.SourceSansBold
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextSize = 18
 title.Parent = main_frame
+
+local toggle_button = Instance.new("TextButton")
+toggle_button.Size = UDim2.new(0, 30, 0, 30)
+toggle_button.Position = UDim2.new(0, 15, 0, 15)
+toggle_button.Text = "SVe" -- NVe
+toggle_button.Font = Enum.Font.SourceSansBold
+toggle_button.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggle_button.TextSize = 14
+toggle_button.Parent = GuiMain
+
+toggle_button.Activated:Connect(function()
+	if next(currently_dragged) then return end
+	if not GuiMain or not GuiMain.Parent then return end
+	if not main_frame or not main_frame.Parent then return end
+	if not scripts_frame or not scripts_frame.Parent then return end
+	if not controls_frame or not controls_frame.Parent then return end
+
+	if main_frame.Visible then
+		main_frame.Visible = false
+		scripts_frame.Visible = false
+		controls_frame.Visible = false
+		controls_frame.Visible = false
+	else
+		main_frame.Visible = true
+	end
+end)
+
+makeDraggable(toggle_button)
+makeUIStyles(toggle_button)
 makeDraggable(main_frame)
 makeDraggable(controls_frame)
+makeUIStyles(main_frame)
+makeUIStyles(controls_frame)
+makeUIStyles(buttons_frame)
+makeDraggable(buttons_frame)
+makeUIStyles(scripts_frame)
+makeDraggable(scripts_frame)
 
 -- Global variables
 _G.NV_OFFSET = _G.NV_OFFSET or 500
@@ -218,23 +482,27 @@ local vertical_dir = 0
 
 -- Helper function for textboxes
 local function createVariableEditor(name, variable, yPos, callback)
+	local container = Instance.new("Frame")
+	container.Size = UDim2.new(1, -5, 0, 25)
+	container.BackgroundTransparency = 1
+	container.Parent = main_frame
+
 	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(0.5, -5, 0, 25)
+	label.Size = UDim2.new(0.5, -5, 1, 0)
 	label.Position = UDim2.new(0, 5, 0, yPos)
 	label.BackgroundTransparency = 1
-	label.Text = name .. ":"
+	label.Text = name .. " :"
 	label.TextColor3 = Color3.fromRGB(255, 255, 255)
 	label.TextXAlignment = Enum.TextXAlignment.Left
-	label.Parent = main_frame
+	label.Parent = container
 
 	local box = Instance.new("TextBox")
-	box.Size = UDim2.new(0.5, -10, 0, 25)
+	box.Size = UDim2.new(0.5, -10, 1, 0)
 	box.Position = UDim2.new(0.5, 5, 0, yPos)
-	box.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 	box.Text = tostring(variable)
 	box.TextColor3 = Color3.fromRGB(255, 255, 255)
 	box.ClearTextOnFocus = false
-	box.Parent = main_frame
+	box.Parent = container
 
 	box.FocusLost:Connect(function()
 		local num = tonumber(box.Text)
@@ -248,16 +516,21 @@ local function createVariableEditor(name, variable, yPos, callback)
 end
 
 -- Helper for buttons
-local function createButton(text, yPos, color, callback)
+local function createButton(text, color, callback)
 	local button = Instance.new("TextButton")
 	button.Size = UDim2.new(1, -10, 0, 30)
-	button.Position = UDim2.new(0, 5, 0, yPos)
+	button.Position = UDim2.new(0, 0, 0, 0)
 	button.BackgroundColor3 = color
 	button.Text = text
 	button.TextColor3 = Color3.fromRGB(255, 255, 255)
 	button.Font = Enum.Font.SourceSansBold
 	button.TextSize = 16
-	button.Parent = main_frame
+	button.Parent = buttons_frame
+
+	local stroke = Instance.new("UIStroke")
+	stroke.Thickness = 2
+	stroke.Parent = button
+	table.insert(frame_colors.tc2, stroke)
 
 	button.MouseButton1Click:Connect(function()
 		TweenService:Create(button, TweenInfo.new(0.1), {
@@ -300,6 +573,11 @@ local function createControlButton(text, x, y, dirVector)
 	button.Text = text
 	button.Parent = controls_frame
 
+	local stroke = Instance.new("UIStroke")
+	stroke.Thickness = 2
+	stroke.Parent = button
+	table.insert(frame_colors.tc2, stroke)
+
 	-- Move while button is held
 	local holding = false
 	button.MouseButton1Down:Connect(function()
@@ -331,6 +609,9 @@ local function stop_all_loops()
 		spoofc_connection:Disconnect()
 		spoofc_connection = nil
 	end
+	adjust_layout(main_frame, false, true)
+	adjust_layout(buttons_frame, false, true)
+	adjust_layout(scripts_frame, false, true)
 end
 
 -- 💀 Death handling
@@ -359,6 +640,9 @@ local function refresh_universal_variables()
 	else
 		warn("[Refresh] Some universal variables could not be found.")
 	end
+	adjust_layout(main_frame, false, true)
+	adjust_layout(buttons_frame, false, true)
+	adjust_layout(scripts_frame, false, true)
 end
 
 refresh_universal_variables()
@@ -512,6 +796,105 @@ InputService.InputBegan:Connect(function(input, processed)
 	end
 end)
 
+local function canRunLoadstring()
+	local success, err = pcall(function()
+		loadstring("print('hello world')")
+	end)
+	if success then
+		return true
+	else
+		return false
+	end
+end
+
+local json_url = "https://raw.githubusercontent.com/Buddy-Gian251/Roblox-Invisibility-by-nicehouse10000e/refs/heads/main/scripts.json" -- ✅ define your JSON source here
+
+-- 🧩 Tag for identifying buttons
+local BUTTON_TAG = "NV_script_button"
+
+-- 🧠 Function: Load scripts from JSON and create buttons
+local function castScriptsFromJSON()
+	if not json_url or json_url == "" then
+		message("Error", "Missing JSON URL.", 4)
+		return
+	end
+
+	-- Fetch JSON data
+	local success, result = pcall(function()
+		return game:HttpGet(json_url)
+	end)
+
+	if not success then
+		message("Error", "Failed to fetch JSON scripts.", 4)
+		warn("[NV JSON] Fetch failed:", result)
+		return
+	end
+
+	-- Decode JSON
+	local decodeSuccess, decoded = pcall(function()
+		return HttpService:JSONDecode(result)
+	end)
+
+	if not decodeSuccess or type(decoded) ~= "table" then
+		message("Error", "Invalid JSON structure.", 4)
+		warn("[NV JSON] Decode failed:", decoded)
+		return
+	end
+
+	-- Clear old buttons first
+	for _, v in ipairs(scripts_frame:GetChildren()) do
+		if v:IsA("TextButton") and CollectionService:HasTag(v, BUTTON_TAG) then
+			v:Destroy()
+		end
+	end
+
+	-- Create new buttons
+	for index, scriptData in ipairs(decoded) do
+		if type(scriptData) ~= "table" then continue end
+
+		local name = tostring(scriptData.name or "Unnamed Script")
+		local colorTable = scriptData.color
+		local color = Color3.fromRGB(80, 80, 80)
+
+		if typeof(colorTable) == "table" and #colorTable == 3 then
+			color = Color3.fromRGB(colorTable[1], colorTable[2], colorTable[3])
+		end
+
+		local code = scriptData.code or ""
+
+		local text_button = Instance.new("TextButton")
+		text_button.Size = UDim2.new(0, 200, 0, 40)
+		text_button.Position = UDim2.new(0.5, -100, 0, 50 + ((index - 1) * 50))
+		text_button.BackgroundColor3 = color
+		text_button.Text = name
+		text_button.TextColor3 = Color3.new(1, 1, 1)
+		text_button.TextSize = 18
+		text_button.Parent = scripts_frame
+
+		CollectionService:AddTag(text_button, BUTTON_TAG)
+
+		text_button.MouseButton1Click:Connect(function()
+			message("Running Script", name, 2)
+			local runSuccess, runError = pcall(function()
+				loadstring(code)()
+			end)
+			if not runSuccess then
+				message("Error", "Script failed: " .. tostring(runError), 5)
+			end
+		end)
+	end
+
+	adjust_layout(scripts_frame, false, true)
+end
+
+-- Your "Scripts Menu" button
+createButton("📜 Scripts Menu", Color3.fromRGB(155, 155, 155), function()
+	scripts_frame.Visible = not scripts_frame.Visible
+	if scripts_frame.Visible then
+		castScriptsFromJSON()
+	end
+end)
+
 InputService.InputEnded:Connect(function(input)
 	if input.KeyCode == Enum.KeyCode.Q or input.KeyCode == Enum.KeyCode.E then
 		stop_y_freeze_modification()
@@ -519,11 +902,11 @@ InputService.InputEnded:Connect(function(input)
 end)
 
 -- Buttons
-createButton("♻ Refresh Variables", 110, Color3.fromRGB(70, 130, 180), function()
+createButton("♻ Refresh Variables", Color3.fromRGB(70, 130, 180), function()
 	refresh_universal_variables()
 end)
 
-createButton("⚡ Start/Stop CFrame Speed", 150, Color3.fromRGB(60, 179, 113), function()
+createButton("⚡ Start/Stop CFrame Speed", Color3.fromRGB(60, 179, 113), function()
 	speed_enabled = not speed_enabled
 	if speed_enabled then
 		start_cframe_speed()
@@ -534,7 +917,7 @@ createButton("⚡ Start/Stop CFrame Speed", 150, Color3.fromRGB(60, 179, 113), f
 	end
 end)
 
-createButton("⬆ Toggle Offset", 190, Color3.fromRGB(255, 140, 0), function()
+createButton("⬆ Toggle Offset", Color3.fromRGB(255, 140, 0), function()
 	offset_bool = not offset_bool
 	set_offset()
 end)
@@ -559,8 +942,20 @@ createControlButton("S", 70, 70, Vector3.new(0, 0, -1)) -- back
 createControlButton("D", 140, 70, Vector3.new(1, 0, 0)) -- right
 
 -- Toggle visibility button
-createButton("🎮 Show Controls", 230, Color3.fromRGB(255, 165, 0), function()
+createButton("🎮 Show Controls", Color3.fromRGB(255, 165, 0), function()
 	controls_frame.Visible = not controls_frame.Visible
 end)
 
+table.insert(frame_colors.tc1, main_frame)
+table.insert(frame_colors.tc1, scripts_frame)
+table.insert(frame_colors.tc1, controls_frame)
+table.insert(frame_colors.tc1, buttons_frame)
+table.insert(frame_colors.tc1, toggle_button)
+table.insert(frame_colors.tc2, title)
 
+task.spawn(function()
+	while true do
+		task.wait(4)
+		set_colors()
+	end
+end)
