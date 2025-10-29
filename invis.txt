@@ -810,10 +810,11 @@ local function canRunLoadstring()
 	end
 end
 
-local json_url = "https://raw.githubusercontent.com/Buddy-Gian251/Roblox-Invisibility-by-nicehouse10000e/refs/heads/main/scripts.json" -- ✅ define your JSON source here
-
--- 🧩 Tag for identifying buttons
+local gamePlaceId = tostring(game.PlaceId)
 local BUTTON_TAG = "NV_script_button"
+
+-- 🔗 JSON URL
+local json_url = "https://raw.githubusercontent.com/Buddy-Gian251/Roblox-Invisibility-by-nicehouse10000e/refs/heads/main/scripts.json"
 
 -- 🧠 Function: Load scripts from JSON and create buttons
 local function castScriptsFromJSON()
@@ -822,7 +823,7 @@ local function castScriptsFromJSON()
 		return
 	end
 
-	-- Fetch JSON data
+	-- Fetch JSON
 	local success, result = pcall(function()
 		return game:HttpGet(json_url)
 	end)
@@ -844,53 +845,62 @@ local function castScriptsFromJSON()
 		return
 	end
 
-	-- Clear old buttons first
+	-- Clear old buttons
 	for _, v in ipairs(scripts_frame:GetChildren()) do
 		if v:IsA("TextButton") and CollectionService:HasTag(v, BUTTON_TAG) then
 			v:Destroy()
 		end
 	end
 
+	local visibleIndex = 0
+
 	-- Create new buttons
-	for index, scriptData in ipairs(decoded) do
+	for _, scriptData in ipairs(decoded) do
 		if type(scriptData) ~= "table" then continue end
 
 		local name = tostring(scriptData.name or "Unnamed Script")
 		local colorTable = scriptData.color
 		local color = Color3.fromRGB(80, 80, 80)
+		local specifiedGame = tostring(scriptData.specified_game or "")
+		local code = scriptData.code or ""
 
 		if typeof(colorTable) == "table" and #colorTable == 3 then
 			color = Color3.fromRGB(colorTable[1], colorTable[2], colorTable[3])
 		end
 
-		local code = scriptData.code or ""
+		-- ✅ Game filtering logic
+		-- Universal scripts: specified_game == "" or nil
+		-- Game-specific: only show if matches game.PlaceId
+		if specifiedGame == "" or specifiedGame == "nil" or specifiedGame == tostring(gamePlaceId) then
+			visibleIndex += 1
 
-		local text_button = Instance.new("TextButton")
-		text_button.Size = UDim2.new(0, 200, 0, 40)
-		text_button.Position = UDim2.new(0.5, -100, 0, 50 + ((index - 1) * 50))
-		text_button.BackgroundColor3 = color
-		text_button.Text = name
-		text_button.TextColor3 = Color3.new(1, 1, 1)
-		text_button.TextSize = 18
-		text_button.Parent = scripts_frame
+			local text_button = Instance.new("TextButton")
+			text_button.Size = UDim2.new(0, 200, 0, 40)
+			text_button.Position = UDim2.new(0.5, -100, 0, 50 + ((visibleIndex - 1) * 50))
+			text_button.BackgroundColor3 = color
+			text_button.Text = name
+			text_button.TextColor3 = Color3.new(1, 1, 1)
+			text_button.TextSize = 18
+			text_button.Parent = scripts_frame
 
-		CollectionService:AddTag(text_button, BUTTON_TAG)
+			CollectionService:AddTag(text_button, BUTTON_TAG)
 
-		text_button.MouseButton1Click:Connect(function()
-			message("Running Script", name, 2)
-			local runSuccess, runError = pcall(function()
-				loadstring(code)()
+			text_button.MouseButton1Click:Connect(function()
+				message("Running Script", name, 2)
+				local runSuccess, runError = pcall(function()
+					loadstring(code)()
+				end)
+				if not runSuccess then
+					message("Error", "Script failed: " .. tostring(runError), 5)
+				end
 			end)
-			if not runSuccess then
-				message("Error", "Script failed: " .. tostring(runError), 5)
-			end
-		end)
+		end
 	end
 
 	adjust_layout(scripts_frame, false, true)
 end
 
--- Your "Scripts Menu" button
+-- 📜 Scripts Menu button
 createButton("📜 Scripts Menu", Color3.fromRGB(155, 155, 155), function()
 	scripts_frame.Visible = not scripts_frame.Visible
 	if scripts_frame.Visible then
@@ -962,6 +972,7 @@ task.spawn(function()
 		set_colors()
 	end
 end)
+
 
 
 
