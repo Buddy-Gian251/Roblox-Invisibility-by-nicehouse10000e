@@ -14,8 +14,9 @@ end)
 
 local PARENT
 
-local ScriptVersion = "0.0.0.0.4"
+local ScriptVersion = "0.0.0.0.5"
 local ScriptName = "spookvisibility2025e" --nicevisibility10000e
+local ScriptState = "Alpha"
 
 --[[nvm i suck at this]]
 --local safe_to_use = false -- not yet, we gotta wait for the game to load or a new version
@@ -202,12 +203,151 @@ task.delay(5, function()
 	message("Creator Following", "Do you want to follow me?", 5, nil, "Yes", "No")
 end)
 
+local GuiMain = _G.nicevis_interface
+if not GuiMain then
+	-- 🧹 Cleanup old interface before creating a new one
+	if _G.nicevis_interface and _G.nicevis_interface.Parent then
+		_G.nicevis_interface:Destroy()
+		_G.nicevis_interface = nil
+	end
+	GuiMain = Instance.new("ScreenGui")
+	GuiMain.Enabled = true
+	GuiMain.IgnoreGuiInset = true
+	GuiMain.ResetOnSpawn = false
+	GuiMain.Parent = PARENT
+	_G.nicevis_interface = GuiMain
+end
+GuiMain.Name = randomString()
+
+local sounds_folder = GuiMain:FindFirstChild("PLAYING_SOUNDS")
+if not sounds_folder then
+	sounds_folder = Instance.new("Folder")
+end
+sounds_folder.Name = "PLAYING_SOUNDS"
+sounds_folder.Parent = GuiMain
+
 local frame_colors = {
 	tc1 = {}, -- will use targetColor
 	tc2 = {}, -- will use targetColor2
 	tc3 = {}, -- will use targetColor3
 	tc4 = {}, -- will use targetColor4
 }
+
+local sfx_ids = {}
+local bgm_ids = {}
+
+local sounds_json_url = "https://raw.githubusercontent.com/Buddy-Gian251/Roblox-Invisibility-by-nicehouse10000e/refs/heads/main/audio_files.json"
+
+-- optional helper since table.getkeys() doesn’t exist natively:
+local function getkeys_fromtable(t)
+	local keys = {}
+	for k in pairs(t) do
+		table.insert(keys, k)
+	end
+	return keys
+end
+
+local function getRandomValueFromTable(t)
+	local keys = {}
+	for k in pairs(t) do
+		table.insert(keys, k)
+	end
+	if #keys == 0 then return nil end
+	local randomKey = keys[math.random(1, #keys)]
+	return t[randomKey]
+end
+
+local function getSoundsFromJSON()
+	if not sounds_json_url or sounds_json_url == "" then
+		message("Error", "Missing JSON URL. Please provide a valid JSON URL for your Roblox audio files.", 4)
+		return
+	end
+
+	local success, result = pcall(function()
+		return game:HttpGet(sounds_json_url)
+	end)
+
+	if not success then
+		message("Error", "Failed to fetch JSON file.", 4)
+		warn("[NV JSON] Fetch failed:", result)
+		return
+	end
+
+	local decodeSuccess, decoded = pcall(function()
+		return HttpService:JSONDecode(result)
+	end)
+
+	if not decodeSuccess or type(decoded) ~= "table" then
+		message("Error", "Invalid JSON format. Please check your JSON file.", 4)
+		warn("[NV JSON] Decode failed:", decoded)
+		return
+	end
+
+	if decoded.sfx_ids and type(decoded.sfx_ids) == "table" then
+		sfx_ids = decoded.sfx_ids
+	else
+		warn("[NV JSON] No 'sfx_ids' found in JSON.")
+	end
+
+	if decoded.bgm_ids and type(decoded.bgm_ids) == "table" then
+		bgm_ids = decoded.bgm_ids
+	else
+		warn("[NV JSON] No 'bgm_ids' found in JSON.")
+	end
+
+	message("Success", "Audio data loaded successfully.", 3)
+	print("[NV JSON] SFX IDs loaded:", #getkeys_fromtable(sfx_ids))
+	print("[NV JSON] BGM IDs loaded:", #getkeys_fromtable(bgm_ids))
+end
+
+-- call the function
+getSoundsFromJSON()
+
+-- Plays a sound and returns the ID of it
+local function play_sound(assetid, pbvolume, pbspeed, looped, delete_when_stopped)
+	local sound = Instance.new("Sound")
+	sound.SoundId = "rbxassetid://"..assetid
+	sound.Volume = pbvolume or 0.5
+	sound.PlaybackSpeed = pbspeed or 1
+	sound.Looped = looped or false
+	sound.Parent = sounds_folder
+	sound:Play()
+	sound.Ended:Connect(function()
+		if delete_when_stopped and type(delete_when_stopped) == "boolean" then
+			task.wait(1)
+			sound:Destroy()
+		end
+	end)
+	return assetid
+end
+
+local current_bgm = ""
+
+local function play_bgm_using_function()
+	local bgm_id = getRandomValueFromTable(bgm_ids)
+	if bgm_id then
+		current_bgm = play_sound(bgm_id, 0.5, 1, true, false)
+	end
+end
+
+local function toggle_bgm()
+	local found_sound = nil
+	if not current_bgm then return end
+	for _, v in ipairs(sounds_folder:GetChildren()) do
+		if v:IsA("Sound") then
+			if v.SoundId == "rbxassetid://"..current_bgm then
+				found_sound = v
+				break
+			end
+		end
+	end
+	if not found_sound then return end
+	if found_sound.IsPaused then
+		found_sound:Resume()
+	else
+		found_sound:Pause()
+	end
+end
 
 local function adjust_layout(object, adjust_x, adjust_y)
 	local layout = object:FindFirstChildWhichIsA("UIListLayout") or object:FindFirstChildWhichIsA("UIGridLayout")
@@ -219,10 +359,8 @@ local function adjust_layout(object, adjust_x, adjust_y)
 	end
 
 	local function updateCanvasSize()
-		RunService.Heartbeat:Wait() -- ensures layout finished updating
-		--message("DEBUG", "Updating canvas size")
+		task.wait() -- yield 1 frame so AbsoluteContentSize updates
 		local absContentSize = layout.AbsoluteContentSize
-		local newCanvasSize = object.CanvasSize
 
 		local padX, padY = 0, 0
 		if padding then
@@ -230,20 +368,22 @@ local function adjust_layout(object, adjust_x, adjust_y)
 			padY = (padding.PaddingTop.Offset + padding.PaddingBottom.Offset)
 		end
 
-		-- Add spacing (layout padding) and UIPadding
-		local totalX = absContentSize.X + padX
-		local totalY = absContentSize.Y + padY
+		local totalX = absContentSize.X + padX + 10
+		local totalY = absContentSize.Y + padY + 10
 
 		if adjust_x and adjust_y then
-			newCanvasSize = UDim2.new(0, totalX, 0, totalY)
+			object.CanvasSize = UDim2.new(0, totalX, 0, totalY)
 		elseif adjust_x then
-			newCanvasSize = UDim2.new(0, totalX, newCanvasSize.Y.Scale, newCanvasSize.Y.Offset)
+			object.CanvasSize = UDim2.new(0, totalX, object.CanvasSize.Y.Scale, object.CanvasSize.Y.Offset)
 		elseif adjust_y then
-			newCanvasSize = UDim2.new(newCanvasSize.X.Scale, newCanvasSize.X.Offset, 0, totalY)
+			object.CanvasSize = UDim2.new(object.CanvasSize.X.Scale, object.CanvasSize.X.Offset, 0, totalY)
 		end
-
-		object.CanvasSize = newCanvasSize
 	end
+
+	-- ⏱ Auto-update when children change
+	layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvasSize)
+	object.ChildAdded:Connect(updateCanvasSize)
+	object.ChildRemoved:Connect(updateCanvasSize)
 
 	-- Initial update
 	updateCanvasSize()
@@ -254,33 +394,33 @@ local function set_colors()
 	local current_day = getDayNumber()
 	local current_week = getWeekNumber()
 
-	print(current_month, current_day, current_week)
+	--print(current_month, current_day, current_week)
 
-	local targetColor = Color3.fromRGB(255, 255, 255)
-	local targetColor2 = Color3.fromRGB(255, 255, 255)
-	local targetColor3 = Color3.fromRGB(255, 255, 255)
-	local targetColor4 = Color3.fromRGB(255, 255, 255)
+	local targetColor = Color3.fromRGB(166, 166, 166)
+	local targetColor2 = Color3.fromRGB(136, 136, 136)
+	local targetColor3 = Color3.fromRGB(91, 91, 91)
+	local targetColor4 = Color3.fromRGB(50, 50, 50)
 
 	-- 🎃 October 27 - November 6 → Halloween
 	if (current_month == 10 and current_day >= 27) or (current_month == 11 and current_day <= 6) then
-		targetColor = Color3.fromRGB(217, 72, 0)
-		targetColor2 = Color3.fromRGB(211, 113, 0)
+		targetColor = Color3.fromRGB(255, 170, 0)
+		targetColor2 = Color3.fromRGB(177, 118, 0)
 		targetColor3 = Color3.fromRGB(40, 0, 0)
-		targetColor4 = Color3.fromRGB(80, 40, 0)
+		targetColor4 = Color3.fromRGB(136, 32, 0)
 
 		-- 🦃 November 7 - November 26 → Thanksgiving
 	elseif (current_month == 11 and current_day >= 7 and current_day <= 26) then
-		targetColor = Color3.fromRGB(255, 136, 0)
-		targetColor2 = Color3.fromRGB(255, 94, 0)
-		targetColor3 = Color3.fromRGB(80, 0, 0)
-		targetColor4 = Color3.fromRGB(80, 59, 30)
+		targetColor = Color3.fromRGB(255, 151, 47)
+		targetColor2 = Color3.fromRGB(255, 79, 20)
+		targetColor3 = Color3.fromRGB(80, 60, 0)
+		targetColor4 = Color3.fromRGB(80, 70, 59)
 
 		-- 🎄 November 27 - December 26 → Christmas
 	elseif (current_month == 11 and current_day >= 27) or (current_month == 12 and current_day <= 26) then
-		targetColor = Color3.fromRGB(0, 255, 100)
-		targetColor2 = Color3.fromRGB(255, 0, 0)
+		targetColor = Color3.fromRGB(108, 228, 255)
+		targetColor2 = Color3.fromRGB(98, 208, 255)
 		targetColor3 = Color3.fromRGB(0, 80, 0)
-		targetColor4 = Color3.fromRGB(60, 0, 0)
+		targetColor4 = Color3.fromRGB(80, 0, 0)
 
 		-- 🎆 December 27 - January 6 → New Year
 	elseif (current_month == 12 and current_day >= 27) or (current_month == 1 and current_day <= 6) then
@@ -327,22 +467,6 @@ local function set_colors()
 
 	setframecolors()
 end
-
-local GuiMain = _G.nicevis_interface
-if not GuiMain then
-	-- 🧹 Cleanup old interface before creating a new one
-	if _G.nicevis_interface and _G.nicevis_interface.Parent then
-		_G.nicevis_interface:Destroy()
-		_G.nicevis_interface = nil
-	end
-	GuiMain = Instance.new("ScreenGui")
-	GuiMain.Enabled = true
-	GuiMain.IgnoreGuiInset = true
-	GuiMain.ResetOnSpawn = false
-	GuiMain.Parent = PARENT
-	_G.nicevis_interface = GuiMain
-end
-GuiMain.Name = randomString()
 
 local main_frame = Instance.new("ScrollingFrame")
 main_frame.Size = UDim2.new(0, 250, 0, 210)
@@ -402,13 +526,55 @@ controls_frame.Position = UDim2.new(0.5, -100, 0.5, -150)
 controls_frame.Visible = false -- hidden by default
 controls_frame.Parent = GuiMain
 
+local soundboard_frame = Instance.new("ScrollingFrame")
+soundboard_frame.Size = UDim2.new(0, 200, 0, 200)
+soundboard_frame.Position = UDim2.new(0.5, -100, 0.5, -150)
+soundboard_frame.Visible = false -- hidden by default
+soundboard_frame.Parent = GuiMain
+
+local soundboard_layout = Instance.new("UIGridLayout")
+soundboard_layout.Parent = soundboard_frame
+soundboard_layout.SortOrder = Enum.SortOrder.Name
+soundboard_layout.CellSize = UDim2.new(0, 80, 0, 20)
+
+local SBS_TAG = "SOUNDBOARD_BUTTONS"
+
+local function createSoundboardButtons()
+	-- Remove old buttons
+	for _, v in ipairs(soundboard_frame:GetChildren()) do
+		if v:IsA("TextButton") and CollectionService:HasTag(v, SBS_TAG) then
+			v:Destroy()
+		end
+	end
+
+	-- Create new ones
+	for name, id in pairs(sfx_ids) do
+		local button = Instance.new("TextButton")
+		button.Size = UDim2.new(0, 140, 0, 32)
+		button.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+		button.TextColor3 = Color3.new(1, 1, 1)
+		button.Font = Enum.Font.SourceSansSemibold
+		button.TextScaled = true
+		button.Text = name
+		button.Parent = soundboard_frame
+		CollectionService:AddTag(button, SBS_TAG)
+		makeUIStyles(button)
+
+		-- Play sound on click
+		button.Activated:Connect(function()
+			play_sound(id, 1, 1, false, true) -- play_sound(SoundId, Volume, Pitch, Looping)
+		end)
+	end
+end
+
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 30)
-title.Text = ScriptName.." v"..ScriptVersion
+title.Text = ScriptName.." v"..ScriptVersion.." ["..string.upper(ScriptState).."]"
 title.Font = Enum.Font.SourceSansBold
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.TextSize = 18
+--title.TextSize = 18
 title.Parent = main_frame
+title.TextScaled = true
 
 local toggle_button = Instance.new("TextButton")
 toggle_button.Size = UDim2.new(0, 30, 0, 30)
@@ -436,6 +602,7 @@ toggle_button.Activated:Connect(function()
 		controls_frame.Visible = false
 		buttons_frame.Visible = false
 		buttons_toggle.Visible = false
+		soundboard_frame.Visible = false
 	else
 		main_frame.Visible = true
 		buttons_frame.Visible = buttons_is_visible
@@ -469,6 +636,12 @@ makeDraggable(buttons_frame)
 makeUIStyles(scripts_frame)
 makeDraggable(scripts_frame)
 makeDraggable(buttons_toggle)
+makeDraggable(soundboard_frame)
+makeUIStyles(soundboard_frame)
+adjust_layout(buttons_frame, false, true)
+adjust_layout(main_frame, false, true)
+adjust_layout(soundboard_frame, true, true)
+adjust_layout(scripts_frame, false, true)
 
 -- Global variables
 _G.NV_OFFSET = _G.NV_OFFSET or 500
@@ -641,9 +814,6 @@ local function stop_all_loops()
 		spoofc_connection:Disconnect()
 		spoofc_connection = nil
 	end
-	adjust_layout(main_frame, false, true)
-	adjust_layout(buttons_frame, false, true)
-	adjust_layout(scripts_frame, false, true)
 end
 
 -- 💀 Death handling
@@ -672,9 +842,6 @@ local function refresh_universal_variables()
 	else
 		warn("[Refresh] Some universal variables could not be found.")
 	end
-	adjust_layout(main_frame, false, true)
-	adjust_layout(buttons_frame, false, true)
-	adjust_layout(scripts_frame, false, true)
 end
 
 refresh_universal_variables()
@@ -843,18 +1010,22 @@ local gamePlaceId = tostring(game.PlaceId)
 local BUTTON_TAG = "NV_script_button"
 
 -- 🔗 JSON URL
-local json_url = "https://raw.githubusercontent.com/Buddy-Gian251/Roblox-Invisibility-by-nicehouse10000e/refs/heads/main/scripts.json"
+local scripts_json_url = "https://raw.githubusercontent.com/Buddy-Gian251/Roblox-Invisibility-by-nicehouse10000e/refs/heads/main/scripts.json"
 
 -- 🧠 Function: Load scripts from JSON and create buttons
 local function castScriptsFromJSON()
-	if not json_url or json_url == "" then
-		message("Error", "Missing JSON URL.", 4)
+	if not canRunLoadstring() then 
+		return 
+	end
+
+	if not scripts_json_url or scripts_json_url == "" then
+		message("Error", "Missing JSON URL, please provide a JSON URL for your roblox scripts", 4)
 		return
 	end
 
 	-- Fetch JSON
 	local success, result = pcall(function()
-		return game:HttpGet(json_url)
+		return game:HttpGet(scripts_json_url)
 	end)
 
 	if not success then
@@ -909,24 +1080,35 @@ local function castScriptsFromJSON()
 			text_button.BackgroundColor3 = color
 			text_button.Text = name
 			text_button.TextColor3 = Color3.new(1, 1, 1)
-			text_button.TextSize = 18
+			--text_button.TextSize = 18
 			text_button.Parent = scripts_frame
+			text_button.TextScaled = true
 
 			CollectionService:AddTag(text_button, BUTTON_TAG)
 
 			text_button.MouseButton1Click:Connect(function()
-				message("Running Script", name, 2)
-				local runSuccess, runError = pcall(function()
-					loadstring(code)()
+				if not canRunLoadstring() then 
+					message("Loadstring Error", "Your executor doesn't support loadstring, use another executor and try again")
+					return
+				end
+				local load_success, load_result = pcall(function()
+					message("Running Script", name, 2)
+					local runSuccess, runError = pcall(function()
+						loadstring(code)()
+					end)
+					if not runSuccess then
+						message("Error", "Script failed: " .. tostring(runError), 5)
+					end
 				end)
-				if not runSuccess then
-					message("Error", "Script failed: " .. tostring(runError), 5)
+
+				if success then
+					message("Success", "Script executed successfully.", 2)
+				else
+					message("Execute Error", "Failed to run script: " .. tostring(load_result), 5)
 				end
 			end)
 		end
 	end
-
-	adjust_layout(scripts_frame, false, true)
 end
 
 -- 📜 Scripts Menu button
@@ -974,6 +1156,12 @@ createVariableEditor("CFSpeed", CFSpeed, 70, function(num)
 	CFSpeed = num
 	message("Variable Updated", "CFSpeed set to " .. num, 2)
 end)
+createButton("🔊 Soundboard", Color3.fromRGB(90,200,40), function()
+	soundboard_frame.Visible = not soundboard_frame.Visible
+	if soundboard_frame.Visible then
+		createSoundboardButtons()
+	end
+end)
 
 -- Arrange QEWASD with movement vectors
 createControlButton("Q", 10, 10, Vector3.new(0, -1, 0)) -- down
@@ -988,12 +1176,17 @@ createButton("🎮 Show Controls", Color3.fromRGB(255, 165, 0), function()
 	controls_frame.Visible = not controls_frame.Visible
 end)
 
+createButton("🎵 Toggle BGM", Color3.fromRGB(128,234,294), function()
+	toggle_bgm()
+end)
+
 table.insert(frame_colors.tc1, main_frame)
 table.insert(frame_colors.tc1, scripts_frame)
 table.insert(frame_colors.tc1, controls_frame)
 table.insert(frame_colors.tc1, buttons_frame)
 table.insert(frame_colors.tc1, toggle_button)
 table.insert(frame_colors.tc2, title)
+table.insert(frame_colors.tc2, soundboard_frame)
 
 task.spawn(function()
 	while true do
