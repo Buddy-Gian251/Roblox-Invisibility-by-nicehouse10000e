@@ -1,0 +1,32 @@
+{
+	"sfx_ids": {
+		"FAHH": "92076037937225",
+		"Disappearing sound effect (1)": "7772283448",
+		"Cat laughing": "17620645740",
+		"FNaF har har": "18331725459",
+		"Android ringtone (1)": "17517499979",
+		"Bone crack": "114739399228816",
+		"Nope (1)": "6346074926",
+		"WinXP Shutdown": "6345884580",
+		"Win95 Err": "263105619",
+		"Win7 Startup": "7112183471",
+		"WinXP Startup": "1626996526"
+	},
+	"bgm_ids": {
+		"Chill Jazz": "1845341094",
+		"Christmas Tree": "1838667764",
+		"Ode to Christmas": "1838667039",
+		"Last Christmas": "111876062981584",
+		"Relaxed Scene": "1848354536",
+		"Clair De Lune": "1838457617",
+		"Gymnopedie No 1": "9045766377",
+		"Halloween Night": "1838592691",
+		"Halloween Night -1": "1842942838",
+		"Halloween Horrors Waltz": "1836009626",
+		"No More": "1846458016",
+		"Raining Tacos": "142376088",
+		"Nocturne Opus 9 C": "1848028342",
+		"Happy Song": "1843404009",
+		"Win95 Breakdown": "89996972805878"
+	}
+}
