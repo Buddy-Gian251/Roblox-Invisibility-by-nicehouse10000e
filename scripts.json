@@ -1,68 +1,79 @@
-[
+{
 	{
 		"name": "Infinite Yield",
-		"specified_game" : "",
+		"specified_game": "",
 		"color": [0, 200, 255],
-		"code": "loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))()"
+		"code": "loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))()",
+		"patched": false
 	},
 	{
 		"name": "DEX Explorer",
-		"specified_game" : "",
+		"specified_game": "",
 		"color": [0, 200, 255],
-		"code": "loadstring(game:HttpGet('https://raw.githubusercontent.com/peyton2465/Dex/master/out.lua'))()"
+		"code": "loadstring(game:HttpGet('https://raw.githubusercontent.com/peyton2465/Dex/master/out.lua'))()",
+		"patched": false
 	},
 	{
 		"name": "FLEE THE FACILITY: OP Script ESP NO ERRORS AND MORE",
-		"specified_game" : "893973440",
+		"specified_game": "893973440",
 		"color": [0, 200, 255],
-		"code": "loadstring(game:HttpGet('https://raw.githubusercontent.com/ProBaconHub/ProBaconHubV2/refs/heads/main/LOADER.lua'))()"
+		"code": "loadstring(game:HttpGet('https://raw.githubusercontent.com/ProBaconHub/ProBaconHubV2/refs/heads/main/LOADER.lua'))()",
+		"patched": false
 	},
 	{
 		"name": "Fling all",
-		"specified_game" : "",
+		"specified_game": "",
 		"color": [0, 200, 255],
-		"code": "loadstring(game:HttpGet('https://raw.githubusercontent.com/gigihumana/Fe-fling-all-by-gigi/refs/heads/main/Fe%20fling%20all'))()"
+		"code": "loadstring(game:HttpGet('https://raw.githubusercontent.com/gigihumana/Fe-fling-all-by-gigi/refs/heads/main/Fe%20fling%20all'))()",
+		"patched": false
 	},
 	{
 		"name": "TSBG: Trashcan man",
-		"specified_game" : "10449761463",
+		"specified_game": "10449761463",
 		"color": [0, 200, 255],
-		"code": "loadstring(game:HttpGet('https://raw.githubusercontent.com/yes1nt/yes/refs/heads/main/Trashcan%20Man'))()"
+		"code": "loadstring(game:HttpGet('https://raw.githubusercontent.com/yes1nt/yes/refs/heads/main/Trashcan%20Man'))()",
+		"patched": false
 	},
 	{
 		"name": "PL: FlameCoder",
-		"specified_game" : "155615604",
+		"specified_game": "155615604",
 		"color": [0, 200, 255],
-		"code": "loadstring(game:HttpGet('https://pastebin.com/raw/CwncTqSG'))()"
+		"code": "loadstring(game:HttpGet('https://pastebin.com/raw/CwncTqSG'))()",
+		"patched": false
 	},
 	{
 		"name": "SAB: Steal a Brainrot",
-		"specified_game" : "109983668079237",
+		"specified_game": "109983668079237",
 		"color": [0, 200, 255],
-		"code": "loadstring(game:HttpGet('https://raw.githubusercontent.com/VectorHubz/VectorHubs/refs/heads/main/Vector'))()"
+		"code": "loadstring(game:HttpGet('https://raw.githubusercontent.com/VectorHubz/VectorHubs/refs/heads/main/Vector'))()",
+		"patched": false
 	},
 	{
 		"name": "TSBG: Kade Hub",
-		"specified_game" : "10449761463",
+		"specified_game": "10449761463",
 		"color": [0, 200, 255],
-		"code": "loadstring(game:HttpGet('https://raw.githubusercontent.com/skibiditoiletfan2007/KadeHubRepository/main/Latest.lua'))()"
+		"code": "loadstring(game:HttpGet('https://raw.githubusercontent.com/skibiditoiletfan2007/KadeHubRepository/main/Latest.lua'))()",
+		"patched": false
 	},
 	{
 		"name": "PL: ChronosHUB",
-		"specified_game" : "10449761463",
+		"specified_game": "10449761463",
 		"color": [0, 200, 255],
-		"code": "loadstring(game:HttpGet('https://api.junkie-development.de/api/v1/luascripts/public/1a443f6e29b02127615790f04d81ec70628a35d697c97080d8f8a208d49edcd5/download'))()"
+		"code": "loadstring(game:HttpGet('https://api.junkie-development.de/api/v1/luascripts/public/1a443f6e29b02127615790f04d81ec70628a35d697c97080d8f8a208d49edcd5/download'))()",
+		"patched": false
 	},
 	{
 		"name": "PL: Auto-arrest",
-		"specified_game" : "10449761463",
+		"specified_game": "10449761463",
 		"color": [0, 200, 255],
-		"code": "loadstring(game:HttpGet('https://rawscripts.net/raw/Prison-Life-Arrest-Aura-OPEN-SOURCE-61190'))()"
+		"code": "loadstring(game:HttpGet('https://rawscripts.net/raw/Prison-Life-Arrest-Aura-OPEN-SOURCE-61190'))()",
+		"patched": false
 	},
 	{
 		"name": "NDS: NDS HUB",
-		"specified_game" : "189707",
+		"specified_game": "189707",
 		"color": [0, 200, 255],
-		"code": "loadstring(game:HttpGet('https://raw.githubusercontent.com/KaterHub-Inc/NaturalDisasterSurvival/refs/heads/main/main.lua'))()"
+		"code": "loadstring(game:HttpGet('https://raw.githubusercontent.com/KaterHub-Inc/NaturalDisasterSurvival/refs/heads/main/main.lua'))()",
+		"patched": false
 	},
-]
+}
