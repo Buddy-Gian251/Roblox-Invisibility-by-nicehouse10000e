@@ -268,6 +268,7 @@ local play_sound = function(assetid, pbvolume, pbspeed, looped, delete_when_stop
 	local sound = Instance.new("Sound")
 	local loaded = false
 	local timeout = 10
+	local sound_success, sound_result
 	sound.SoundId = "rbxassetid://" .. assetid
 	sound.Volume = pbvolume or 0.5
 	sound.PlaybackSpeed = pbspeed or 1
@@ -277,18 +278,20 @@ local play_sound = function(assetid, pbvolume, pbspeed, looped, delete_when_stop
 		loaded = true
 	end)
 	task.spawn(function()
-		local elapsed = 0
-		local connection
-		connection = nv_run_service.Heartbeat:Connect(function(dt)
-			if loaded then
-				connection:Disconnect()
-				return
-			end
-			elapsed += dt
-			if elapsed >= timeout then
-				connection:Disconnect()
-				error(("Sound (assetid: %s) failed to load within %d seconds."):format(assetid, timeout))
-			end
+		sound_success, sound_result = pcall(function()
+			local elapsed = 0
+			local connection
+			connection = nv_run_service.Heartbeat:Connect(function(dt)
+				if loaded then
+					connection:Disconnect()
+					return
+				end
+				elapsed += dt
+				if elapsed >= timeout then
+					connection:Disconnect()
+					error(("Sound (assetid: %s) failed to load within %d seconds."):format(assetid, timeout))
+				end
+			end)
 		end)
 	end)
 	sound:Play()
@@ -973,3 +976,4 @@ nv_player.CharacterAdded:Connect(function() task.wait(1) refresh_universal_varia
 task.wait(5)
 local formatted_message = 'Loading :'..nv_univsersal_formatted_name
 message("niceloader v1.0", formatted_message, 3)
+
