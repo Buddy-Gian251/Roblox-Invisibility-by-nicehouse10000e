@@ -1,3 +1,4 @@
+-- buy me a new pc
 -- my eyes hurt, let me read again
 -- pov: scrolling through this source code lmao
 local nv_players = game:GetService("Players")
@@ -9,11 +10,19 @@ local nv_collection_service = game:GetService("CollectionService")
 local nv_http_service = game:GetService("HttpService")
 local nv_player = nv_players.LocalPlayer
 local PARENT
+local get_timezone = function() return tonumber(os.date("%z")) end
+local get_year_number = function() return tonumber(os.date("%Y")) end
+local get_month_number = function() return tonumber(os.date("%m")) end
+local get_week_number = function() return tonumber(os.date("%W")) end
+local get_day_number = function() return tonumber(os.date("%d")) end
 local nv_script_version = "0.0.0.0.6"
-local nv_script_name = "spookvisibility2025e" --nicevisibility10000e
+local nv_script_prefix = "nice"
+local nv_number = "10000"
+local nv_script_name = "visibility" --nicevisibility10000e
+local nv_final_script_name = nv_script_prefix..nv_script_name..nv_number.."e"
 local nv_script_state = "Alpha"
 local nv_script_build = 14
-local nv_univsersal_formatted_name = nv_script_name.." v"..nv_script_version.." ["..nv_script_state.." b"..nv_script_build.."]"
+local nv_universal_formatted_name = nv_final_script_name.." v"..nv_script_version.." ["..nv_script_state.." b"..nv_script_build.."]"
 --[[nvm i suck at this]]
 --local nv_safe_to_use = false -- not yet, we gotta wait for the game to load or a new version
 local nv__global_success, nv__global_result = pcall(function()
@@ -44,13 +53,10 @@ local nv__global_success, nv__global_result = pcall(function()
 		if b1 < b2 then return -1 elseif b1 > b2 then return 1 else return 0 end
 	end
 	if compare_versions(_G.nicevis_version or "0", nv_script_version) >= 0 and compare_build_number(_G.nicevis_build or 0, nv_script_build) then
-	    print("NV is already up-to-date globally")
+		print("NV is already up-to-date globally")
 	else
-	    if _G.nicevis_interface then
-	        _G.nicevis_interface:ClearAllChildren()
-	    end
-	    print("Updating NV globally")
-	    _G.nicevis_version = nv_script_version
+		print("Updating NV globally")
+		_G.nicevis_version = nv_script_version
 	end
 end)
 if not nv__global_success then
@@ -71,6 +77,23 @@ local message = function(title, text, ptime, icon, button1, button2)
 		})
 	end)
 end
+local set_name_details = function(season, year)
+	local seasonal_prefixes = {
+		["halloween"] = "spook",
+		["thanksgiving"] = "yummy",
+		["christmas"] = "icy",
+		["new year"] = "newyear",
+		["july 4"] = "american"
+	}
+	local season_lower = string.lower(tostring(season))
+	local year_str = tostring(year)
+	local prefix = seasonal_prefixes[season_lower]
+	if prefix then
+		nv_universal_formatted_name = prefix .. nv_script_name .. year_str .. "e"
+	else
+		nv_universal_formatted_name = nv_script_prefix .. nv_script_name .. nv_number .. "e"
+	end
+end
 local gamePlaceId = tostring(game.PlaceId)
 local BUTTON_TAG = "NV_script_button"
 local scripts_json_url = "https://raw.githubusercontent.com/Buddy-Gian251/Roblox-Invisibility-by-nicehouse10000e/main/scripts.json"
@@ -81,9 +104,6 @@ local currently_dragged = {}
 local sfx_ids = {}
 local bgm_ids = {}
 local sounds_json_url = "https://raw.githubusercontent.com/Buddy-Gian251/Roblox-Invisibility-by-nicehouse10000e/main/audio_files.json"
-local get_month_number = function() return tonumber(os.date("%m")) end
-local get_week_number = function() return tonumber(os.date("%W")) end
-local get_day_number = function() return tonumber(os.date("%d")) end
 _G.nicevis_version = nv_script_version
 _G.nicevis_build = nv_script_build
 _G.NV_OFFSET = _G.NV_OFFSET or 500
@@ -117,6 +137,7 @@ local y_adjust_connection = _G.NV_Y_ADJUST_CONNECTION
 local frozen_y = _G.NV_FROZEN_Y
 local y_frozen = _G.NV_Y_FROZEN
 local vertical_dir = 0
+local current_season = ""
 local make_interface_styles = function(item)
 	if not (item:IsA("Frame") or item:IsA("TextLabel") or item:IsA("TextButton") or item:IsA("TextBox")) then return end
 	local stroke = Instance.new("UIStroke")
@@ -322,6 +343,7 @@ end
 local cast_choices = function(choices, hasCancel, timeout, choice_message, callback)
 	if not choices or type(choices) ~= "table" or choices == {} then return end
 	play_sound("128438193391727", 5, 1, false, true)
+	set_name_details(current_season, get_year_number())
 	local choice_mainframe = Instance.new("Frame")
 	local choice_title = Instance.new("TextLabel")
 	local choice_text_label = Instance.new("TextLabel")
@@ -335,7 +357,7 @@ local cast_choices = function(choices, hasCancel, timeout, choice_message, callb
 	choice_mainframe.ZIndex = 10000
 	choice_mainframe.Parent = nv_main_gui
 	choice_title.Size = UDim2.new(1, 0, 0, choices_title_size)
-	choice_title.Text = nv_script_name.."://CHOICE-PATROL"
+	choice_title.Text = nv_universal_formatted_name..": CHOICE-PATROL"
 	choice_title.TextColor3 = Color3.fromRGB(255, 255, 255)
 	choice_title.TextScaled = true
 	choice_title.BackgroundTransparency = 1
@@ -466,6 +488,7 @@ local adjust_layout = function(object, adjust_x, adjust_y)
 	updateCanvasSize()
 end
 local set_colors = function() 
+	local current_year = get_year_number()
 	local current_month = get_month_number()
 	local current_day = get_day_number()
 	local current_week = get_week_number()
@@ -475,21 +498,25 @@ local set_colors = function()
 	local targetColor3 = Color3.fromRGB(91, 91, 91)
 	local targetColor4 = Color3.fromRGB(50, 50, 50)
 	if (current_month == 10 and current_day >= 27) or (current_month == 11 and current_day <= 6) then
+		current_season = "Halloween"
 		targetColor = Color3.fromRGB(255, 170, 0)
 		targetColor2 = Color3.fromRGB(177, 118, 0)
 		targetColor3 = Color3.fromRGB(40, 0, 0)
 		targetColor4 = Color3.fromRGB(136, 32, 0)
 	elseif (current_month == 11 and current_day >= 7 and current_day <= 26) then
+		current_season = "Thanksgiving"
 		targetColor = Color3.fromRGB(255, 151, 47)
 		targetColor2 = Color3.fromRGB(255, 79, 20)
 		targetColor3 = Color3.fromRGB(80, 60, 0)
 		targetColor4 = Color3.fromRGB(80, 70, 59)
 	elseif (current_month == 11 and current_day >= 27) or (current_month == 12 and current_day <= 26) then
+		current_season = "Christmas"
 		targetColor = Color3.fromRGB(108, 228, 255)
 		targetColor2 = Color3.fromRGB(98, 208, 255)
 		targetColor3 = Color3.fromRGB(0, 80, 0)
 		targetColor4 = Color3.fromRGB(80, 0, 0)
 	elseif (current_month == 12 and current_day >= 27) or (current_month == 1 and current_day <= 6) then
+		current_season = "New Year"
 		targetColor = Color3.fromRGB(255, 255, 0)
 		targetColor2 = Color3.fromRGB(0, 255, 255)
 		targetColor3 = Color3.fromRGB(0, 0, 60)
@@ -524,16 +551,13 @@ local set_colors = function()
 		end
 	end
 	setframecolors()
+	set_name_details(current_season, current_year)
 end
 local can_acces_clipboard = function()
 	local success, result = pcall(function()
 		setclipboard("GAMEID: "..game.PlaceId)
 	end)
-	if success then 
-		return true
-	else
-		return false
-	end
+	if success then return true else return false end
 end
 cast_choices({"Sure!", "No, maybe later"}, true, 10, "Do you want to follow the creator?", function(value, button)
 	local lowered_choice_0001 = string.lower(value)
@@ -608,7 +632,7 @@ soundboard_layout.Parent = soundboard_frame
 soundboard_layout.SortOrder = Enum.SortOrder.Name
 soundboard_layout.CellSize = UDim2.new(0, 80, 0, 20)
 title.Size = UDim2.new(1, 0, 0, 30)
-title.Text = nv_univsersal_formatted_name
+title.Text = nv_universal_formatted_name
 title.Font = Enum.Font.SourceSansBold
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 --title.TextSize = 18
@@ -675,7 +699,7 @@ local create_veditor = function(name, variable, callback)
 	label.TextXAlignment = Enum.TextXAlignment.Left
 	label.Parent = container
 	box.Size = UDim2.new(0.5, -10, 1, 0)
-	box.Position = UDim2.new(0.5, 5, 0, yPos)
+	box.Position = UDim2.new(0.5, 5, 0, 0)
 	box.Text = tostring(variable)
 	box.TextColor3 = Color3.fromRGB(255, 255, 255)
 	box.ClearTextOnFocus = false
@@ -761,6 +785,7 @@ local stop_all_loops = function()
 	if y_freeze_connection then y_freeze_connection:Disconnect() y_freeze_connection = nil end
 	if spoofc_connection then spoofc_connection:Disconnect() spoofc_connection = nil end
 	if univ_humanoid then univ_humanoid.CameraOffset = Vector3.new(0, 0, 0) end
+	set_name_details(current_season, get_year_number())
 end
 local setup_death_connection = function()
 	if not univ_humanoid then return end
@@ -771,12 +796,14 @@ local setup_death_connection = function()
 	end)
 end
 local refresh_universal_variables = function()
+	set_name_details(current_season, get_year_number())
 	univ_character = nv_player.Character or nv_player.CharacterAdded:Wait()
 	univ_humanoid = univ_character:FindFirstChildOfClass("Humanoid")
 	univ_hrp = univ_character:FindFirstChild("HumanoidRootPart")
 	univ_cam = workspace.CurrentCamera
 	died = false
 	y_frozen = false
+	title.Text = nv_universal_formatted_name
 	if univ_character and univ_humanoid and univ_hrp and univ_cam then message("Variables Refreshed", "All universal references updated.", 2) setup_death_connection() else warn("[Refresh] Some universal variables could not be found.") end
 end
 local spoof_cam = function()
@@ -933,12 +960,12 @@ local cast_scripts_from_json = function()
 end
 --HEY! if I simplify this, it breaks, try it
 create_veditor(
-    "offset",
-    offset,
-    function(num)
-        offset = num
-        message("Variable Updated", "Offset set to " .. num, 2)
-    end
+	"offset",
+	offset,
+	function(num)
+		offset = num
+		message("Variable Updated", "Offset set to " .. num, 2)
+	end
 )
 create_veditor(
 	"CFSpeed", 
@@ -962,7 +989,7 @@ create_button(
 	"Refresh Variables", 
 	Color3.fromRGB(70, 130, 180), 
 	function() 
-	refresh_universal_variables() 
+		refresh_universal_variables() 
 	end
 )
 create_button(
@@ -1061,6 +1088,8 @@ toggle_button.Activated:Connect(function()
 		buttons_toggle.Visible = false
 		soundboard_frame.Visible = false
 	else
+		set_name_details(current_season, get_year_number())
+		title.Text = nv_universal_formatted_name
 		main_frame.Visible = true
 		buttons_frame.Visible = buttons_is_visible
 		buttons_toggle.Visible = true
@@ -1076,10 +1105,8 @@ buttons_toggle.Activated:Connect(function()
 	if buttons_frame.Visible then buttons_frame.Visible = false else buttons_frame.Visible = buttons_is_visible or true end
 end)
 refresh_universal_variables()
-nv_player.CharacterAdded:Connect(function() task.wait(1) refresh_universal_variables() end)
+nv_player.CharacterAdded:Connect(function() set_name_details(current_season, get_year_number()) title = nv_universal_formatted_name task.wait(1) refresh_universal_variables() end)
+set_name_details(current_season, get_year_number())
 task.wait(5)
-local formatted_message = 'Loading :'..nv_univsersal_formatted_name
+local formatted_message = 'Loading :'..nv_universal_formatted_name
 message("niceloader v1.0", formatted_message, 3)
-
-
-
