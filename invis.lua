@@ -284,7 +284,7 @@ local play_sound = function(assetid, pbvolume, pbspeed, looped, delete_when_stop
 			connection = nv_run_service.Heartbeat:Connect(function(dt)
 				if loaded then
 					connection:Disconnect()
-					return
+					return true
 				end
 				elapsed += dt
 				if elapsed >= timeout then
@@ -976,4 +976,5 @@ nv_player.CharacterAdded:Connect(function() task.wait(1) refresh_universal_varia
 task.wait(5)
 local formatted_message = 'Loading :'..nv_univsersal_formatted_name
 message("niceloader v1.0", formatted_message, 3)
+
 
