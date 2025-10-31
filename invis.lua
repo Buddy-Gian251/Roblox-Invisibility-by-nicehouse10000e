@@ -12,7 +12,7 @@ local PARENT
 local nv_script_version = "0.0.0.0.6"
 local nv_script_name = "spookvisibility2025e" --nicevisibility10000e
 local nv_script_state = "Alpha"
-local nv_script_build = 13
+local nv_script_build = 14
 local nv_univsersal_formatted_name = nv_script_name.." v"..nv_script_version.." ["..nv_script_state.." b"..nv_script_build.."]"
 --[[nvm i suck at this]]
 --local nv_safe_to_use = false -- not yet, we gotta wait for the game to load or a new version
@@ -1080,5 +1080,6 @@ nv_player.CharacterAdded:Connect(function() task.wait(1) refresh_universal_varia
 task.wait(5)
 local formatted_message = 'Loading :'..nv_univsersal_formatted_name
 message("niceloader v1.0", formatted_message, 3)
+
 
 
