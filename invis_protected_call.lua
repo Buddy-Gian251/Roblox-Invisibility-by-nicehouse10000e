@@ -1,4 +1,4 @@
-local link = "https://raw.githubusercontent.com/Buddy-Gian251/Roblox-Invisibility-by-nicehouse10000e/refs/heads/main/invis.txt"
+local link = "https://raw.githubusercontent.com/Buddy-Gian251/Roblox-Invisibility-by-nicehouse10000e/main/invis.lua"
 local ok, result = pcall(function()
   loadstring(game:HttpGet(link))()
 end)
