@@ -6,7 +6,7 @@ local nv_starter_gui = game:GetService("StarterGui")
 local nv_tween_service = game:GetService("TweenService")
 local nv_collection_service = game:GetService("CollectionService")
 local nv_http_service = game:GetService("HttpService")
-local nv_player = nv_players.Localnv_player
+local nv_player = nv_players.LocalPlayer
 local PARENT
 local nv_script_version = "0.0.0.0.5"
 local nv_script_name = "spookvisibility2025e" --nicevisibility10000e
@@ -952,3 +952,4 @@ nv_player.CharacterAdded:Connect(function() task.wait(1) refresh_universal_varia
 task.wait(5)
 local formatted_message = 'Loading :'..nv_univsersal_formatted_name
 message("niceloader v1.0", formatted_message, 3)
+
