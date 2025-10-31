@@ -19,7 +19,7 @@ local nv__global_success, nv__global_result = pcall(function()
 	local nv_core_gui_success, nv_core_gui_result = pcall(function() return game:GetService("CoreGui") end)
 	local can_access_core = function()
 		if not nv_core_gui_success or not nv_core_gui_result then return false end
-		return nv_core_gui_success:FindFirstChild("RobloxGui") ~= nil
+		return nv_core_gui_result:FindFirstChild("RobloxGui") ~= nil
 	end
 	PARENT = (nv_core_gui_success and can_access_core()) and nv_core_gui_success or nv_player:WaitForChild("nv_playerGui")
 	local compare_versions = function(v1, v2)
@@ -37,7 +37,7 @@ local nv__global_success, nv__global_result = pcall(function()
 		end
 		return 0
 	end
-	if compare_versions(_G.nicevis_version, nv_script_version) >= 0 then
+	if compare_versions(_G.nicevis_version or "0", nv_script_version) >= 0 then
 		print("PLRViewer is already up-to-date globally")
 	else
 		print("Updating PLRViewer globally")
@@ -128,7 +128,7 @@ local make_draggable = function(UIItem, y_draggable, x_draggable)
 			holdStartTime = tick()
 			dragStart = input.Position
 			startPos = UIItem.Position
-			holdConnection = game:GetService("nv_run_service").RenderStepped:Connect(function()
+			holdConnection = nv_run_service.RenderStepped:Connect(function()
 				if not dragging and (tick() - holdStartTime) >= 1 then
 					message("Drag feature", "you can now drag "..(UIItem.Name or "this UI").." anywhere.", 2)
 					dragging = true
@@ -277,7 +277,7 @@ local play_sound = function(assetid, pbvolume, pbspeed, looped, delete_when_stop
 			sound:Destroy()
 		end
 	end)
-	return assetid
+	return sound
 end
 local cast_choices = function(choices, hasCancel, timeout, choice_message, callback)
 	if not choices or type(choices) ~= "table" or choices == {} then return end
@@ -952,4 +952,3 @@ nv_player.CharacterAdded:Connect(function() task.wait(1) refresh_universal_varia
 task.wait(5)
 local formatted_message = 'Loading :'..nv_univsersal_formatted_name
 message("niceloader v1.0", formatted_message, 3)
-
