@@ -12,7 +12,7 @@ local PARENT
 local nv_script_version = "0.0.0.0.6"
 local nv_script_name = "spookvisibility2025e" --nicevisibility10000e
 local nv_script_state = "Alpha"
-local nv_script_build = 12
+local nv_script_build = 13
 local nv_univsersal_formatted_name = nv_script_name.." v"..nv_script_version.." ["..nv_script_state.." b"..nv_script_build.."]"
 --[[nvm i suck at this]]
 --local nv_safe_to_use = false -- not yet, we gotta wait for the game to load or a new version
@@ -24,7 +24,7 @@ local nv__global_success, nv__global_result = pcall(function()
 		if not nv_core_gui_success or not nv_core_gui_result then return false end
 		return nv_core_gui_result:FindFirstChild("RobloxGui") ~= nil
 	end
-	PARENT = (nv_core_gui_success and can_access_core()) and nv_core_gui_success or nv_player:WaitForChild("PlayerGui")
+	PARENT = (nv_core_gui_result and can_access_core()) and nv_core_gui_result or nv_player:WaitForChild("PlayerGui")
 	local compare_versions = function(v1, v2)
 		local prefix1 = v1:match("^([A-Z])") or ""
 		local prefix2 = v2:match("^([A-Z])") or ""
@@ -646,7 +646,7 @@ local create_sound_board_buttons = function()
 		end)
 	end
 end
-local create_veditor = function(name, variable, yPos, callback)
+local create_veditor = function(name, variable, callback)
 	local container = Instance.new("Frame")
 	local label = Instance.new("TextLabel")
 	local box = Instance.new("TextBox")
@@ -654,7 +654,7 @@ local create_veditor = function(name, variable, yPos, callback)
 	container.BackgroundTransparency = 1
 	container.Parent = main_frame
 	label.Size = UDim2.new(0.5, -5, 1, 0)
-	label.Position = UDim2.new(0, 5, 0, yPos)
+	label.Position = UDim2.new(0, 5, 0, 0)
 	label.BackgroundTransparency = 1
 	label.Text = name .. " :"
 	label.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -917,14 +917,78 @@ local cast_scripts_from_json = function()
 		end
 	end
 end
-create_veditor("offset", offset, 40, function(num) offset = num message("Variable Updated", "offset set to " .. num, 2) end)
-create_veditor("CFSpeed", CFSpeed, 70, function(num) CFSpeed = num message("Variable Updated", "CFSpeed set to " .. num, 2) end)
-create_button("Scripts Menu", Color3.fromRGB(155, 155, 155), function() scripts_frame.Visible = not scripts_frame.Visible if scripts_frame.Visible then cast_scripts_from_json() end end)
-create_button("Refresh Variables", Color3.fromRGB(70, 130, 180), function() refresh_universal_variables() end)
-create_button("CFrame Speed", Color3.fromRGB(60, 179, 113), function() speed_enabled = not speed_enabled if speed_enabled then start_cframe_speed() message("Speed", "CFrame speed enabled.", 2) else stop_cframe_speed() message("Speed", "CFrame speed disabled.", 2) end end)
-create_button("Toggle Offset", Color3.fromRGB(255, 140, 0), function() offset_bool = not offset_bool set_offset() end)
-create_button("Soundboard", Color3.fromRGB(90,200,40), function() soundboard_frame.Visible = not soundboard_frame.Visible if soundboard_frame.Visible then create_sound_board_buttons() end end)
-create_button("Show Controls", Color3.fromRGB(255, 165, 0), function() controls_frame.Visible = not controls_frame.Visible end)
+--HEY! if I simplify this, it breaks, try it
+create_veditor(
+    "offset",
+    offset,
+    function(num)
+        offset = num
+        message("Variable Updated", "Offset set to " .. num, 2)
+    end
+)
+create_veditor(
+	"CFSpeed", 
+	CFSpeed, 
+	function(num) 
+		CFSpeed = num 
+		message("Variable Updated", "CFSpeed set to " .. num, 2) 
+	end
+)
+create_button(
+	"Scripts Menu", 
+	Color3.fromRGB(155, 155, 155), 
+	function() 
+		scripts_frame.Visible = not scripts_frame.Visible 
+		if scripts_frame.Visible then 
+			cast_scripts_from_json() 
+		end 
+	end
+)
+create_button(
+	"Refresh Variables", 
+	Color3.fromRGB(70, 130, 180), 
+	function() 
+	refresh_universal_variables() 
+	end
+)
+create_button(
+	"CFrame Speed", 
+	Color3.fromRGB(60, 179, 113), 
+	function() 
+		speed_enabled = not speed_enabled 
+		if speed_enabled then 
+			start_cframe_speed() 
+			message("Speed", "CFrame speed enabled.", 2) 
+		else 
+			stop_cframe_speed() 
+			message("Speed", "CFrame speed disabled.", 2) 
+		end 
+	end
+)
+create_button(
+	"Toggle Offset", 
+	Color3.fromRGB(255, 140, 0), 
+	function() 
+		offset_bool = not offset_bool set_offset() 
+	end
+)
+create_button(
+	"Soundboard", 
+	Color3.fromRGB(90,200,40), 
+	function() 
+		soundboard_frame.Visible = not soundboard_frame.Visible 
+		if soundboard_frame.Visible then 
+			create_sound_board_buttons() 
+		end 
+	end
+)
+create_button(
+	"Show Controls", 
+	Color3.fromRGB(255, 165, 0), 
+	function() 
+		controls_frame.Visible = not controls_frame.Visible 
+	end
+)
 create_button("Toggle BGM", Color3.fromRGB(128,234,294), function() toggle_bgm() end)
 create_control_button("Q", 10, 10, Vector3.new(0, -1, 0)) 
 create_control_button("E", 140, 10, Vector3.new(0, 1, 0)) 
@@ -941,8 +1005,32 @@ table.insert(frame_colors.tc2, title)
 table.insert(frame_colors.tc2, soundboard_frame)
 task.spawn(function() while true do task.wait(4) set_colors() end end)
 get_sounds_from_json()
-nv_input_service.InputBegan:Connect(function(input, processed) if processed then return end if input.KeyCode == Enum.KeyCode.F2 then offset_bool = not offset_bool set_offset() elseif input.KeyCode == Enum.KeyCode.F3 then refresh_universal_variables() elseif input.KeyCode == Enum.KeyCode.F4 then speed_enabled = not speed_enabled if speed_enabled and not died then start_cframe_speed() message("Speed", "CFrame speed enabled.", 2) else stop_cframe_speed() message("Speed", "CFrame speed disabled.", 2) end elseif input.KeyCode == Enum.KeyCode.Q then handle_y_freeze_modification(-1) elseif input.KeyCode == Enum.KeyCode.E then handle_y_freeze_modification(1) end end)
-nv_input_service.InputEnded:Connect(function(input) if input.KeyCode == Enum.KeyCode.Q or input.KeyCode == Enum.KeyCode.E then stop_y_freeze_modification() end end)
+nv_input_service.InputBegan:Connect(function(input, processed) 
+	if processed then return end 
+	if input.KeyCode == Enum.KeyCode.F2 then 
+		offset_bool = not offset_bool set_offset() 
+	elseif input.KeyCode == Enum.KeyCode.F3 then 
+		refresh_universal_variables() 
+	elseif input.KeyCode == Enum.KeyCode.F4 then 
+		speed_enabled = not speed_enabled 
+		if speed_enabled and not died then 
+			start_cframe_speed() 
+			message("Speed", "CFrame speed enabled.", 2) 
+		else 
+			stop_cframe_speed() 
+			message("Speed", "CFrame speed disabled.", 2) 
+		end 
+	elseif input.KeyCode == Enum.KeyCode.Q then 
+		handle_y_freeze_modification(-1) 
+	elseif input.KeyCode == Enum.KeyCode.E then 
+		handle_y_freeze_modification(1) 
+	end 
+end)
+nv_input_service.InputEnded:Connect(function(input) 
+	if input.KeyCode == Enum.KeyCode.Q or input.KeyCode == Enum.KeyCode.E then 
+		stop_y_freeze_modification() 
+	end 
+end)
 toggle_button.Activated:Connect(function()
 	if next(currently_dragged) then return end
 	if not nv_main_gui or not nv_main_gui.Parent then return end
@@ -978,7 +1066,3 @@ nv_player.CharacterAdded:Connect(function() task.wait(1) refresh_universal_varia
 task.wait(5)
 local formatted_message = 'Loading :'..nv_univsersal_formatted_name
 message("niceloader v1.0", formatted_message, 3)
-
-
-
-
