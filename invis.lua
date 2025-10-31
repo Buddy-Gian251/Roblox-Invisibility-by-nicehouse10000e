@@ -17,7 +17,9 @@ local nv_univsersal_formatted_name = nv_script_name.." v"..nv_script_version.." 
 --[[nvm i suck at this]]
 --local nv_safe_to_use = false -- not yet, we gotta wait for the game to load or a new version
 local nv__global_success, nv__global_result = pcall(function()
-	local nv_core_gui_success, nv_core_gui_result = pcall(function() return game:GetService("CoreGui") end)
+	local nv_core_gui_success, nv_core_gui_result = pcall(function() 
+		return game:GetService("CoreGui") 
+	end)
 	local can_access_core = function()
 		if not nv_core_gui_success or not nv_core_gui_result then return false end
 		return nv_core_gui_result:FindFirstChild("RobloxGui") ~= nil
@@ -976,6 +978,7 @@ nv_player.CharacterAdded:Connect(function() task.wait(1) refresh_universal_varia
 task.wait(5)
 local formatted_message = 'Loading :'..nv_univsersal_formatted_name
 message("niceloader v1.0", formatted_message, 3)
+
 
 
 
