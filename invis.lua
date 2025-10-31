@@ -200,7 +200,7 @@ task.wait(5)
 local formatted_message = 'Loading interface, version "'..ScriptVersion..'"'
 message("nicevisibility10000e", formatted_message, 3)
 task.delay(5, function()
-	message("Creator Following", "Do you want to follow me?", 5, nil, "Yes", "No")
+	
 end)
 
 local GuiMain = _G.nicevis_interface
@@ -319,6 +319,109 @@ local function play_sound(assetid, pbvolume, pbspeed, looped, delete_when_stoppe
 		end
 	end)
 	return assetid
+end
+
+local choices_title_size = 20
+
+local function cast_choices(choices, hasCancel, timeout, choice_message, callback)
+	if not choices or type(choices) ~= "table" or choices == {} then return end
+
+	play_sound("8503529653", 5, 1, false, true)
+
+	local choice_mainframe = Instance.new("Frame")
+	choice_mainframe.Size = UDim2.new(0, 200, 0, 200)
+	choice_mainframe.Position = UDim2.new(0.5, 0, 0.5, 0)
+	choice_mainframe.AnchorPoint = Vector2.new(0.5, 0.5)
+	choice_mainframe.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	choice_mainframe.BackgroundTransparency = 0.8
+	choice_mainframe.ZIndex = 10000
+	choice_mainframe.Parent = GuiMain
+
+	local choice_title = Instance.new("TextLabel")
+	choice_title.Size = UDim2.new(1, 0, 0, choices_title_size)
+	choice_title.Text = ScriptName.."://CHOICE-PATROL"
+	choice_title.TextColor3 = Color3.fromRGB(255, 255, 255)
+	choice_title.TextScaled = true
+	choice_title.BackgroundTransparency = 1
+	choice_title.TextTransparency = 0
+	choice_title.ZIndex = choice_mainframe.ZIndex + 1
+	choice_title.Parent = choice_mainframe
+
+	local choice_text_label = Instance.new("TextLabel")
+	choice_text_label.Size = UDim2.new(1, 0, 0.9, -choices_title_size)
+	choice_text_label.Position = UDim2.new(0, 0, 0, choices_title_size)
+	choice_text_label.Text = tostring(choice_message)
+	choice_text_label.TextColor3 = Color3.fromRGB(255, 255, 255)
+	choice_text_label.TextScaled = true
+	choice_text_label.BackgroundTransparency = 1
+	choice_text_label.TextTransparency = 0
+	choice_text_label.ZIndex = choice_mainframe.ZIndex + 1
+	choice_text_label.Parent = choice_mainframe
+
+	local choice_buttonframe = Instance.new("Frame")
+	choice_buttonframe.Size = UDim2.new(1, 0, 0.1, 0)
+	choice_buttonframe.Position = UDim2.new(0, 0, 0.9, 0)
+	choice_buttonframe.BackgroundTransparency = 1
+	choice_buttonframe.ZIndex = choice_mainframe.ZIndex + 1
+	choice_buttonframe.Parent = choice_mainframe
+
+	local choice_buttonslayout = Instance.new("UIListLayout")
+	choice_buttonslayout.FillDirection = Enum.FillDirection.Horizontal
+	choice_buttonslayout.Padding = UDim.new(0, 5)
+	choice_buttonslayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+	choice_buttonslayout.VerticalAlignment = Enum.VerticalAlignment.Center
+	choice_buttonslayout.VerticalFlex = Enum.UIFlexAlignment.Fill
+	choice_buttonslayout.HorizontalFlex = Enum.UIFlexAlignment.Fill
+	choice_buttonslayout.Parent = choice_buttonframe
+
+	for key, value in pairs(choices) do
+		local button = Instance.new("TextButton")
+		button.Size = UDim2.new(1, 0, 0, 30)
+		button.Position = UDim2.new(0, 0, 0, 0)
+		button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+		button.BackgroundTransparency = 0.5
+		button.Text = value
+		button.TextColor3 = Color3.fromRGB(255, 255, 255)
+		button.TextTransparency = 0
+		button.TextScaled = true
+		button.ZIndex = choice_mainframe.ZIndex + 2
+		button.Font = Enum.Font.Gotham
+		button.Parent = choice_buttonframe
+
+		button.Activated:Connect(function()
+			callback(value, button)
+			choice_mainframe:Destroy()
+		end)
+	end
+
+	if hasCancel and type(hasCancel) == "boolean" then
+		local cancel_button = Instance.new("TextButton")
+		cancel_button.Size = UDim2.new(0.5, 0, 0, 30)
+		cancel_button.AnchorPoint = Vector2.new(0.5, 0.5)
+		cancel_button.Position = UDim2.new(0.5, 0, 1, 60)
+		cancel_button.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+		cancel_button.BackgroundTransparency = 0.5
+		cancel_button.Text = "Cancel"
+		cancel_button.TextColor3 = Color3.fromRGB(255, 255, 255)
+		cancel_button.TextTransparency = 0
+		cancel_button.TextScaled = true
+		cancel_button.ZIndex = choice_mainframe.ZIndex + 2
+		cancel_button.Font = Enum.Font.Gotham
+		cancel_button.Parent = choice_mainframe
+
+		cancel_button.Activated:Connect(function()
+			callback("Cancel")
+			choice_mainframe:Destroy()
+		end)
+	end
+
+	if timeout and type(timeout) == "number" then
+		if timeout <= 0 then return end
+		task.delay(timeout, function()
+			callback("Cancel")
+			choice_mainframe:Destroy()
+		end)
+	end
 end
 
 local current_bgm = ""
@@ -467,6 +570,32 @@ local function set_colors()
 
 	setframecolors()
 end
+
+local function can_acces_clipboard()
+	local success, result = pcall(function()
+		setclipboard("GAMEID: "..game.PlaceId)
+	end)
+
+	if success then 
+		return true
+	else
+		return false
+	end
+end
+
+cast_choices({"Sure!", "No, maybe later"}, true, 10, "Do you want to follow the creator?", function(value, button)
+	local lowered_choice_0001 = string.lower(value)
+	if lowered_choice_0001 == string.lower("Sure!") then
+		if not can_acces_clipboard() then
+			message("Clipboard error", "Unable to access clipboard, try using a different executor.")
+			return
+		end
+
+		setclipboard("https://www.roblox.com/users/3051475661/profile")
+	else
+		message("Creator Following", "You can follow anytime!")
+	end
+end)
 
 local main_frame = Instance.new("ScrollingFrame")
 main_frame.Size = UDim2.new(0, 250, 0, 210)
@@ -1014,10 +1143,6 @@ local scripts_json_url = "https://raw.githubusercontent.com/Buddy-Gian251/Roblox
 
 -- 🧠 Function: Load scripts from JSON and create buttons
 local function castScriptsFromJSON()
-	if not canRunLoadstring() then 
-		return 
-	end
-
 	if not scripts_json_url or scripts_json_url == "" then
 		message("Error", "Missing JSON URL, please provide a JSON URL for your roblox scripts", 4)
 		return
@@ -1068,9 +1193,6 @@ local function castScriptsFromJSON()
 			color = Color3.fromRGB(colorTable[1], colorTable[2], colorTable[3])
 		end
 
-		-- ✅ Game filtering logic
-		-- Universal scripts: specified_game == "" or nil
-		-- Game-specific: only show if matches game.PlaceId
 		if specifiedGame == "" or specifiedGame == "nil" or specifiedGame == tostring(gamePlaceId) then
 			visibleIndex += 1
 
@@ -1088,23 +1210,48 @@ local function castScriptsFromJSON()
 
 			text_button.MouseButton1Click:Connect(function()
 				if not canRunLoadstring() then 
-					message("Loadstring Error", "Your executor doesn't support loadstring, use another executor and try again")
+					message("Loadstring Error", "Your executor doesn't support loadstring, use another executor and try again", 5)
 					return
 				end
-				local load_success, load_result = pcall(function()
+
+				-- ✅ Check if the script is patched
+				if scriptData.patched == true then
+					message("Executing Patched Script", "The script you tried to execute is patched, it will no longer work as expected, a pop-up message will be shown if you decide to execute it.", 3)
+
+					-- 🎛️ Choice Patrol confirmation
+					cast_choices(
+						{ "Yes, Execute Anyway", "Cancel" },
+						true, -- hasCancel
+						15,   -- timeout (seconds)
+						"Confirm patched script execution?",
+						function(choice, chosenButton)
+							local lowered = string.lower(choice)
+							if choice == string.lower("Yes, Execute Anyway") then
+								message("Running Script", name, 2)
+								local ok, err = pcall(function()
+									loadstring(code)()
+								end)
+								if ok then
+									message("Success", "Patched script executed successfully, if you come to experience problems, please don't blame the creator.", 2)
+								else
+									message("Error", "Script failed: " .. tostring(err), 5)
+								end
+							elseif choice == string.lower("Cancel") then
+								message("Cancelled", "Script execution terminated.", 2)
+							end
+						end
+					)
+				else
+					-- 🚀 Run normal scripts instantly
 					message("Running Script", name, 2)
-					local runSuccess, runError = pcall(function()
+					local ok, err = pcall(function()
 						loadstring(code)()
 					end)
-					if not runSuccess then
-						message("Error", "Script failed: " .. tostring(runError), 5)
+					if ok then
+						message("Success", "Script executed successfully.", 2)
+					else
+						message("Error", "Script failed: " .. tostring(err), 5)
 					end
-				end)
-
-				if success then
-					message("Success", "Script executed successfully.", 2)
-				else
-					message("Execute Error", "Failed to run script: " .. tostring(load_result), 5)
 				end
 			end)
 		end
