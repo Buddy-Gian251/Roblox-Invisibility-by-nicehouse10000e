@@ -24,7 +24,7 @@ local nv__global_success, nv__global_result = pcall(function()
 		if not nv_core_gui_success or not nv_core_gui_result then return false end
 		return nv_core_gui_result:FindFirstChild("RobloxGui") ~= nil
 	end
-	PARENT = (nv_core_gui_result and can_access_core()) and nv_core_gui_result or nv_player:WaitForChild("PlayerGui")
+	PARENT = gethui() or can_access_core() and nv_core_gui_result or nv_player:WaitForChild("PlayerGui")
 	local compare_versions = function(v1, v2)
 		local prefix1 = v1:match("^([A-Z])") or ""
 		local prefix2 = v2:match("^([A-Z])") or ""
@@ -41,10 +41,13 @@ local nv__global_success, nv__global_result = pcall(function()
 		return 0
 	end
 	if compare_versions(_G.nicevis_version or "0", nv_script_version) >= 0 then
-		print("PLRViewer is already up-to-date globally")
+	    print("NV is already up-to-date globally")
 	else
-		print("Updating PLRViewer globally")
-		_G.nicevis_version = nv_script_version
+	    if _G.nicevis_interface then
+	        _G.nicevis_interface:ClearAllChildren()
+	    end
+	    print("Updating NV globally")
+	    _G.nicevis_version = nv_script_version
 	end
 end)
 local message = function(title, text, ptime, icon, button1, button2)
@@ -1066,3 +1069,4 @@ nv_player.CharacterAdded:Connect(function() task.wait(1) refresh_universal_varia
 task.wait(5)
 local formatted_message = 'Loading :'..nv_univsersal_formatted_name
 message("niceloader v1.0", formatted_message, 3)
+
