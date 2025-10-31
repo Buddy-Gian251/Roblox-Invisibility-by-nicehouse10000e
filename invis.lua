@@ -14,9 +14,12 @@ end)
 
 local PARENT
 
-local ScriptVersion = "0.0.0.0.5"
+local ScriptVersion = "0.0.0.0.6"
+local ScriptBuild = 287
 local ScriptName = "spookvisibility2025e" --nicevisibility10000e
 local ScriptState = "Alpha"
+
+local global_script_formatted_name = ScriptName.." v"..ScriptVersion.." ["..string.upper(ScriptState).." "..ScriptBuild.."]"
 
 --[[nvm i suck at this]]
 --local safe_to_use = false -- not yet, we gotta wait for the game to load or a new version
@@ -196,12 +199,9 @@ local function randomString()
 	return table.concat(array)
 end
 
-task.wait(5)
-local formatted_message = 'Loading interface, version "'..ScriptVersion..'"'
-message("nicevisibility10000e", formatted_message, 3)
-task.delay(5, function()
-	
-end)
+task.wait(2)
+local formatted_message = 'Loading interface '..global_script_formatted_name
+message("BOOTLOADER v1.0", formatted_message, 3)
 
 local GuiMain = _G.nicevis_interface
 if not GuiMain then
@@ -236,7 +236,7 @@ local frame_colors = {
 local sfx_ids = {}
 local bgm_ids = {}
 
-local sounds_json_url = "https://raw.githubusercontent.com/Buddy-Gian251/Roblox-Invisibility-by-nicehouse10000e/refs/heads/main/audio_files.json"
+local sounds_json_url = "https://raw.githubusercontent.com/Buddy-Gian251/Roblox-Invisibility-by-nicehouse10000e/main/audio_files.json"
 
 -- optional helper since table.getkeys() doesn’t exist natively:
 local function getkeys_fromtable(t)
@@ -698,7 +698,7 @@ end
 
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 30)
-title.Text = ScriptName.." v"..ScriptVersion.." ["..string.upper(ScriptState).."]"
+title.Text = global_script_formatted_name
 title.Font = Enum.Font.SourceSansBold
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 --title.TextSize = 18
@@ -1139,7 +1139,7 @@ local gamePlaceId = tostring(game.PlaceId)
 local BUTTON_TAG = "NV_script_button"
 
 -- 🔗 JSON URL
-local scripts_json_url = "https://raw.githubusercontent.com/Buddy-Gian251/Roblox-Invisibility-by-nicehouse10000e/refs/heads/main/scripts.json"
+local scripts_json_url = "https://raw.githubusercontent.com/Buddy-Gian251/Roblox-Invisibility-by-nicehouse10000e/main/scripts.json"
 
 -- 🧠 Function: Load scripts from JSON and create buttons
 local function castScriptsFromJSON()
