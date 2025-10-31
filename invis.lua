@@ -1,3 +1,4 @@
+-- my eyes hurt, let me read again
 -- pov: scrolling through this source code lmao
 local nv_players = game:GetService("Players")
 local nv_run_service = game:GetService("RunService")
@@ -21,7 +22,7 @@ local nv__global_success, nv__global_result = pcall(function()
 		if not nv_core_gui_success or not nv_core_gui_result then return false end
 		return nv_core_gui_result:FindFirstChild("RobloxGui") ~= nil
 	end
-	PARENT = (nv_core_gui_success and can_access_core()) and nv_core_gui_success or nv_player:WaitForChild("nv_playerGui")
+	PARENT = (nv_core_gui_success and can_access_core()) and nv_core_gui_success or nv_player:WaitForChild("PlayerGui")
 	local compare_versions = function(v1, v2)
 		local prefix1 = v1:match("^([A-Z])") or ""
 		local prefix2 = v2:match("^([A-Z])") or ""
@@ -265,11 +266,31 @@ local get_sounds_from_json = function()
 end
 local play_sound = function(assetid, pbvolume, pbspeed, looped, delete_when_stopped)
 	local sound = Instance.new("Sound")
-	sound.SoundId = "rbxassetid://"..assetid
+	local loaded = false
+	local timeout = 10
+	sound.SoundId = "rbxassetid://" .. assetid
 	sound.Volume = pbvolume or 0.5
 	sound.PlaybackSpeed = pbspeed or 1
 	sound.Looped = looped or false
 	sound.Parent = sounds_folder
+	sound.Loaded:Connect(function()
+		loaded = true
+	end)
+	task.spawn(function()
+		local elapsed = 0
+		local connection
+		connection = nv_run_service.Heartbeat:Connect(function(dt)
+			if loaded then
+				connection:Disconnect()
+				return
+			end
+			elapsed += dt
+			if elapsed >= timeout then
+				connection:Disconnect()
+				error(("Sound (assetid: %s) failed to load within %d seconds."):format(assetid, timeout))
+			end
+		end)
+	end)
 	sound:Play()
 	sound.Ended:Connect(function()
 		if delete_when_stopped and type(delete_when_stopped) == "boolean" then
@@ -281,7 +302,7 @@ local play_sound = function(assetid, pbvolume, pbspeed, looped, delete_when_stop
 end
 local cast_choices = function(choices, hasCancel, timeout, choice_message, callback)
 	if not choices or type(choices) ~= "table" or choices == {} then return end
-	play_sound("8503529653", 5, 1, false, true)
+	play_sound("128438193391727", 5, 1, false, true)
 	local choice_mainframe = Instance.new("Frame")
 	local choice_title = Instance.new("TextLabel")
 	local choice_text_label = Instance.new("TextLabel")
