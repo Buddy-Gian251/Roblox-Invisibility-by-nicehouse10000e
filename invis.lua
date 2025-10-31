@@ -24,7 +24,7 @@ local nv__global_success, nv__global_result = pcall(function()
 		if not nv_core_gui_success or not nv_core_gui_result then return false end
 		return nv_core_gui_result:FindFirstChild("RobloxGui") ~= nil
 	end
-	PARENT = gethui() or can_access_core() and nv_core_gui_result or nv_player:WaitForChild("PlayerGui")
+	PARENT = (gethui and gethui()) or can_access_core() and nv_core_gui_result or nv_player:WaitForChild("PlayerGui")
 	local compare_versions = function(v1, v2)
 		local prefix1 = v1:match("^([A-Z])") or ""
 		local prefix2 = v2:match("^([A-Z])") or ""
@@ -40,7 +40,10 @@ local nv__global_success, nv__global_result = pcall(function()
 		end
 		return 0
 	end
-	if compare_versions(_G.nicevis_version or "0", nv_script_version) >= 0 then
+	local compare_build_number = function(b1, b2)
+		if b1 < b2 then return -1 elseif b1 > b2 then return 1 else return 0 end
+	end
+	if compare_versions(_G.nicevis_version or "0", nv_script_version) >= 0 and compare_build_number(_G.nicevis_build or 0, nv_script_build) then
 	    print("NV is already up-to-date globally")
 	else
 	    if _G.nicevis_interface then
@@ -50,6 +53,12 @@ local nv__global_success, nv__global_result = pcall(function()
 	    _G.nicevis_version = nv_script_version
 	end
 end)
+if not nv__global_success then
+	warn("[NV Loader] Error:", nv__global_result)
+else
+	print("[NV Loader] Loaded successfully as", nv_universal_formatted_name)
+end
+task.wait()
 local message = function(title, text, ptime, icon, button1, button2)
 	pcall(function()
 		nv_starter_gui:SetCore("SendNotification", {
@@ -75,6 +84,8 @@ local sounds_json_url = "https://raw.githubusercontent.com/Buddy-Gian251/Roblox-
 local get_month_number = function() return tonumber(os.date("%m")) end
 local get_week_number = function() return tonumber(os.date("%W")) end
 local get_day_number = function() return tonumber(os.date("%d")) end
+_G.nicevis_version = nv_script_version
+_G.nicevis_build = nv_script_build
 _G.NV_OFFSET = _G.NV_OFFSET or 500
 _G.NV_CFSPEED = _G.NV_CFSPEED or 50
 _G.NV_OFFSET_BOOL = _G.NV_OFFSET_BOOL or false
@@ -1069,4 +1080,5 @@ nv_player.CharacterAdded:Connect(function() task.wait(1) refresh_universal_varia
 task.wait(5)
 local formatted_message = 'Loading :'..nv_univsersal_formatted_name
 message("niceloader v1.0", formatted_message, 3)
+
 
