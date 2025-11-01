@@ -57,14 +57,14 @@
 	},
 	{
 		"name": "PL: ChronosHUB",
-		"specified_game": "10449761463",
+		"specified_game": "155615604",
 		"color": [0, 200, 255],
 		"code": "loadstring(game:HttpGet('https://api.junkie-development.de/api/v1/luascripts/public/1a443f6e29b02127615790f04d81ec70628a35d697c97080d8f8a208d49edcd5/download'))()",
 		"patched": false
 	},
 	{
 		"name": "PL: Auto-arrest",
-		"specified_game": "10449761463",
+		"specified_game": "155615604",
 		"color": [0, 200, 255],
 		"code": "loadstring(game:HttpGet('https://rawscripts.net/raw/Prison-Life-Arrest-Aura-OPEN-SOURCE-61190'))()",
 		"patched": false
@@ -77,4 +77,5 @@
 		"patched": false
 	}
 ]
+
 
